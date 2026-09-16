@@ -165,7 +165,6 @@ function MessagesContent() {
 
   return (
     <div className="h-[calc(100vh-140px)] min-h-[520px] bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm flex flex-col md:flex-row">
-      {/* Sidebar: Users List */}
       <div className="w-full md:w-80 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0">
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <h2 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
@@ -233,7 +232,6 @@ function MessagesContent() {
         </div>
       </div>
 
-      {/* Chat Area */}
       <div className="flex-1 flex flex-col bg-slate-50/50 dark:bg-navy-950/50">
         {selectedUser ? (
           <>
@@ -271,9 +269,7 @@ function MessagesContent() {
                         }`}
                       >
                         <p>{m.content}</p>
-                        <span
-                          className={`text-[9px] block text-right mt-1 opacity-70`}
-                        >
+                        <span className="text-[9px] block text-right mt-1 opacity-70">
                           {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -330,4 +326,3 @@ export default function MessagesPage() {
     </Suspense>
   );
 }
-
