@@ -330,8 +330,6 @@ function MessagesContent() {
                 <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-200">
                   ჩატი დაბლოკილია
                 </h3>
-                <p className="text-xs text-slate-400 max-w-ა
-                </h3>
                 <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
                   ამ კოლეგასთან მიმოწერის დასაწყებად აუცილებელია, რომ ორივემ დაადასტუროთ კონტაქტებში დამატების მოთხოვნა.
                 </p>
@@ -430,4 +428,11 @@ function MessagesContent() {
 export default function MessagesPage() {
   return (
     <Suspense fallback={
-      <div className="h-6
+      <div className="h-64 flex items-center justify-center text-slate-400">
+        <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+      </div>
+    }>
+      <MessagesContent />
+    </Suspense>
+  );
+}
