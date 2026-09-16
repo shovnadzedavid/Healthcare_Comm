@@ -12,8 +12,27 @@ import {
   FileText, 
   Users, 
   Link as LinkIcon,
-  Send
+  Send,
+  Share2,
+  Check,
+  Reply
 } from 'lucide-react';
+
+function formatRelativeTime(dateStr: string) {
+  if (!dateStr) return '';
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'ახლახან';
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes} წუთის წინ`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} საათის წინ`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) return `${diffInDays} დღის წინ`;
+  return date.toLocaleDateString('ka-GE', { day: 'numeric', month: 'short' });
+}
 
 export default function DiscussionDetailPage() {
   const { id } = useParams();
@@ -25,10 +44,11 @@ export default function DiscussionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [selectedAuthor, setSelectedAuthor] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+      setUser(data?.user ?? null);
     });
     fetchDiscussion();
     fetchComments();
@@ -39,7 +59,7 @@ export default function DiscussionDetailPage() {
       .from('discussions')
       .select(`
         *,
-        author:profiles(id, full_name, profession, workplace, verified_badge)
+        author:profiles(id, full_name, profession, workplace, verified_badge, bio)
       `)
       .eq('id', id)
       .single();
@@ -57,12 +77,20 @@ export default function DiscussionDetailPage() {
         id,
         content,
         created_at,
-        author:profiles(id, full_name, profession, workplace, verified_badge)
+        author:profiles(id, full_name, profession, workplace, verified_badge, bio)
       `)
       .eq('discussion_id', id)
       .order('created_at', { ascending: true });
 
     if (data) setComments(data);
+  };
+
+  const handleCopyLink = () => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
   };
 
   const handleAddComment = async (e: React.FormEvent) => {
@@ -73,19 +101,60 @@ export default function DiscussionDetailPage() {
     }
     if (!newComment.trim()) return;
 
+    const commentText = newComment.trim();
+    setNewComment('');
     setSubmitting(true);
-    const { error } = await supabase
+
+    const optimisticComment = {
+      id: `temp-${Date.now()}`,
+      content: commentText,
+      created_at: new Date().toISOString(),
+      author: {
+        id: user.id,
+        full_name: user.user_metadata?.full_name || 'მე',
+        profession: user.user_metadata?.profession || '',
+        workplace: user.user_metadata?.workplace || '',
+        verified_badge: false,
+      },
+    };
+    setComments((prev) => [...prev, optimisticComment]);
+
+    const { data, error } = await supabase
       .from('discussion_comments')
       .insert({
         discussion_id: id,
         author_id: user.id,
-        content: newComment.trim(),
-      });
+        content: commentText,
+      })
+      .select(`
+        id,
+        content,
+        created_at,
+        author:profiles(id, full_name, profession, workplace, verified_badge, bio)
+      `)
+      .single();
 
     setSubmitting(false);
-    if (!error) {
-      setNewComment('');
-      fetchComments();
+
+    if (error) {
+      console.error('Error adding comment:', error);
+      setComments((prev) => prev.filter((c) => c.id !== optimisticComment.id));
+      setNewComment(commentText);
+    } else if (data) {
+      setComments((prev) => prev.map((c) => (c.id === optimisticComment.id ? data : c)));
+
+      if (discussion?.author?.id && discussion.author.id !== user.id) {
+        try {
+          const myName = user.user_metadata?.full_name || 'კოლეგამ';
+          await supabase.from('notifications').insert({
+            user_id: discussion.author.id,
+            content: `${myName} დააკომენტარა თქვენს დისკუსიაზე: "${discussion.title.slice(0, 30)}..."`,
+            is_read: false,
+          });
+        } catch (notifErr) {
+          console.error('Notification error:', notifErr);
+        }
+      }
     }
   };
 
@@ -104,19 +173,30 @@ export default function DiscussionDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <Link
-        href="/discussions"
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" /> ყველა დისკუსია
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link
+          href="/discussions"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> ყველა დისკუსია
+        </Link>
 
-      <article className="bg-white dark:bg-navy-900 border border-slate-300 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
+        <button
+          onClick={handleCopyLink}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 shadow-xs transition-all cursor-pointer active:scale-95"
+          title="ბმულის კოპირება"
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5 text-cyan-500" />}
+          <span>{copied ? 'ბმული დაკოპირდა!' : 'გაზიარება'}</span>
+        </button>
+      </div>
+
+      <article className="bg-white dark:bg-navy-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
         <div className="flex items-center justify-between pb-5 border-b border-slate-200 dark:border-slate-800">
           <button
             type="button"
             onClick={() => discussion.author && setSelectedAuthor(discussion.author)}
-            className="flex items-center gap-3.5 text-left group cursor-pointer hover:opacity-90 transition-opacity"
+            className="flex items-center gap-3.5 text-left group cursor-pointer hover:opacity-95 transition-opacity"
             title="დააჭირეთ ავტორის სანახავად / დასამატებლად"
           >
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-teal-400 p-[2px] shadow-sm group-hover:scale-105 transition-transform shrink-0">
@@ -136,14 +216,14 @@ export default function DiscussionDetailPage() {
                   ავტორი
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 {discussion.author?.profession} {discussion.author?.workplace ? `• ${discussion.author.workplace}` : ''}
               </p>
             </div>
           </button>
 
           <span className="text-xs text-slate-400 font-semibold">
-            {new Date(discussion.created_at).toLocaleDateString('ka-GE')}
+            {formatRelativeTime(discussion.created_at)}
           </span>
         </div>
 
@@ -232,7 +312,7 @@ export default function DiscussionDetailPage() {
         </div>
       </article>
 
-      <section className="bg-white dark:bg-navy-900 border border-slate-300 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
+      <section className="bg-white dark:bg-navy-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
         <div className="flex items-center gap-2.5 text-lg font-black text-slate-900 dark:text-white">
           <MessageSquare className="w-5 h-5 text-cyan-500" />
           <span>გამოხმაურებები ({comments.length})</span>
@@ -245,13 +325,13 @@ export default function DiscussionDetailPage() {
             onChange={(e) => setNewComment(e.target.value)}
             placeholder={user ? "გამოხატეთ თქვენი პროფესიული მოსაზრება..." : "გაიარეთ ავტორიზაცია პასუხის დასატოვებლად..."}
             disabled={!user || submitting}
-            className="w-full p-4 text-sm sm:text-base bg-slate-50 dark:bg-navy-950 border border-slate-300 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white font-medium disabled:opacity-50 shadow-sm"
+            className="w-full p-4 text-sm sm:text-base bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white font-medium disabled:opacity-50 shadow-xs placeholder-slate-400 transition-all"
           />
           <div className="flex justify-end">
             <button
               type="submit"
               disabled={!user || !newComment.trim() || submitting}
-              className="px-6 py-2.5 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-cyan-600/20 disabled:opacity-50 flex items-center gap-2 transition-all cursor-pointer"
+              className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-600 to-teal-500 hover:opacity-95 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-cyan-600/20 disabled:opacity-50 flex items-center gap-2 transition-all cursor-pointer active:scale-95"
             >
               <Send className="w-4 h-4" />
               {submitting ? 'იგზავნება...' : 'პასუხი'}
@@ -265,32 +345,56 @@ export default function DiscussionDetailPage() {
               ჯერ არ არის კომენტარები. დააფიქსირეთ თქვენი პოზიცია პირველმა!
             </p>
           ) : (
-            comments.map((c) => (
-              <div
-                key={c.id}
-                className="p-5 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-2"
-              >
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <button
-                    type="button"
-                    onClick={() => c.author && setSelectedAuthor(c.author)}
-                    className="flex items-center gap-2 font-bold text-slate-900 dark:text-white hover:text-cyan-500 transition-colors text-left cursor-pointer"
-                    title="დააჭირეთ ავტორის სანახავად / დასამატებლად"
-                  >
-                    <span>{c.author?.full_name}</span>
-                    {c.author?.verified_badge && <CheckCircle className="w-3.5 h-3.5 text-cyan-500" />}
-                    <span className="text-slate-400 font-normal">• {c.author?.profession}</span>
-                  </button>
+            comments.map((c) => {
+              const isAuthor = discussion.author?.id && c.author?.id === discussion.author.id;
 
-                  <span className="text-slate-400 text-xs">
-                    {new Date(c.created_at).toLocaleDateString('ka-GE')}
-                  </span>
+              return (
+                <div
+                  key={c.id}
+                  className="p-5 rounded-2xl bg-slate-50/70 dark:bg-navy-950/60 border border-slate-200/90 dark:border-slate-800/80 space-y-2.5 transition-all hover:border-slate-300 dark:hover:border-slate-700/80"
+                >
+                  <div className="flex items-center justify-between text-xs sm:text-sm">
+                    <button
+                      type="button"
+                      onClick={() => c.author && setSelectedAuthor(c.author)}
+                      className="flex items-center gap-2 font-bold text-slate-900 dark:text-white hover:text-cyan-500 transition-colors text-left cursor-pointer"
+                      title="დააჭირეთ ავტორის სანახავად / დასამატებლად"
+                    >
+                      <span>{c.author?.full_name}</span>
+                      {c.author?.verified_badge && <CheckCircle className="w-3.5 h-3.5 text-cyan-500" />}
+                      {isAuthor && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20">
+                          ავტორი
+                        </span>
+                      )}
+                      <span className="text-slate-400 font-normal hidden sm:inline">• {c.author?.profession}</span>
+                    </button>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-400 text-xs">
+                        {formatRelativeTime(c.created_at)}
+                      </span>
+                      {user && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const mention = `@${c.author?.full_name || 'კოლეგა'} `;
+                            setNewComment((prev) => (prev.startsWith(mention) ? prev : mention + prev));
+                          }}
+                          className="text-[11px] text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1 font-bold cursor-pointer"
+                        >
+                          <Reply className="w-3 h-3" />
+                          <span>პასუხი</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed font-medium">
+                    {c.content}
+                  </p>
                 </div>
-                <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed font-medium">
-                  {c.content}
-                </p>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </section>
