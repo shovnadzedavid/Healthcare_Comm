@@ -297,7 +297,7 @@ export default function DiscussionDetailPage() {
         </div>
       </section>
 
-      {/* Author Profile Quick Action Modal */}
+      {/* Author Profile Modal */}
       <UserCardModal
         isOpen={!!selectedAuthor}
         onClose={() => setSelectedAuthor(null)}
