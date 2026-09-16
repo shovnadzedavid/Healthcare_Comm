@@ -45,7 +45,10 @@ export default function DirectoryPage() {
       user_id: currentUserId,
       contact_id: targetId,
     });
-    if (!error) {
+    
+    if (error) {
+      alert("შეცდომა ბაზაში ჩაწერისას: " + error.message);
+    } else {
       setContacts((prev) => [...prev, targetId]);
     }
   };
