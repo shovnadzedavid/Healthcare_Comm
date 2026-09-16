@@ -10,7 +10,7 @@ import {
   Check, 
   ShieldCheck, 
   Building2, 
-  Stethoscope, 
+  GraduationCap, 
   Loader2, 
   Lock, 
   Clock, 
@@ -229,7 +229,7 @@ export default function UserCardModal({ isOpen, onClose, user }: UserCardModalPr
             <div className="flex items-center justify-center gap-1.5 font-extrabold text-lg text-slate-900 dark:text-white">
               <span>{user.full_name}</span>
               {user.verified_badge && (
-                <span title="ვერიფიცირებული სპეციალისტი">
+                <span title="ვერიფიცირებული საზოგადოებრივი ჯანდაცვისა და პოლიტიკის ექსპერტი">
                   <ShieldCheck className="w-4 h-4 text-cyan-500 drop-shadow-sm" />
                 </span>
               )}
@@ -237,7 +237,7 @@ export default function UserCardModal({ isOpen, onClose, user }: UserCardModalPr
 
             {user.profession && (
               <p className="text-xs font-semibold text-cyan-700 dark:text-cyan-400 flex items-center justify-center gap-1.5">
-                <Stethoscope className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                <GraduationCap className="w-3.5 h-3.5 shrink-0 opacity-80" />
                 <span>{user.profession}</span>
               </p>
             )}
@@ -295,7 +295,7 @@ export default function UserCardModal({ isOpen, onClose, user }: UserCardModalPr
               <>
                 <div className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
                   <UserCheck className="w-4 h-4" />
-                  <span>დადასტურებული კონტაქტი</span>
+                  <span>დადასტურებული კოლეგა</span>
                 </div>
 
                 <Link
