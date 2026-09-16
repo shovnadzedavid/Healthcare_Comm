@@ -60,7 +60,6 @@ export default function DirectoryPage() {
   const fetchAllData = async (myId: string) => {
     setLoading(true);
     try {
-      // 1. ყველა კოლეგის წამოღება საკუთარი თავის გარდა
       const { data: profilesData, error: profError } = await supabase
         .from('profiles')
         .select('id, full_name, profession, workplace, verified_badge')
@@ -74,7 +73,6 @@ export default function DirectoryPage() {
         setUsers(profilesData);
       }
 
-      // 2. ჩემი დამატებული კონტაქტების წამოღება
       const { data: contactsData, error: contError } = await supabase
         .from('contacts')
         .select('contact_id')
@@ -167,7 +165,6 @@ export default function DirectoryPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-      {/* Header Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-navy-900 to-slate-900 border border-slate-800 p-6 sm:p-8 shadow-xl">
         <div className="relative z-10 space-y-2 max-w-2xl">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
@@ -184,7 +181,6 @@ export default function DirectoryPage() {
         </div>
       </div>
 
-      {/* Feedback Toast */}
       {feedback && (
         <div className={`p-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-between border transition-all animate-in fade-in duration-200 ${
           feedback.type === 'success' 
@@ -196,7 +192,6 @@ export default function DirectoryPage() {
         </div>
       )}
 
-      {/* Search & Stats Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-navy-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="relative w-full sm:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -216,7 +211,6 @@ export default function DirectoryPage() {
         </div>
       </div>
 
-      {/* Main Grid */}
       {loading ? (
         <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-400">
           <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
@@ -265,9 +259,7 @@ export default function DirectoryPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800/80 gap-2">
-                  {/* Direct Chat Button */}
                   <Link
                     href={`/messages?user=${u.id}`}
                     className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors flex items-center gap-1.5"
@@ -277,7 +269,6 @@ export default function DirectoryPage() {
                     <span>ჩატი</span>
                   </Link>
 
-                  {/* Add / Remove Contact */}
                   <div className="flex items-center gap-2">
                     {isAdded ? (
                       <>
@@ -317,4 +308,3 @@ export default function DirectoryPage() {
     </div>
   );
 }
-
