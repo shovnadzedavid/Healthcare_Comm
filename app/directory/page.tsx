@@ -9,45 +9,58 @@ export default function DirectoryPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [contacts, setContacts] = useState<string[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) {
+    supabase.auth.getUser().then(async ({ data, error }) => {
+      if (error || !data.user) {
+        setDebugInfo('მომხმარებელი არ არის ავტორიზებული');
         router.push('/auth');
       } else {
         setCurrentUserId(data.user.id);
+        setDebugInfo(`იუზერი იდენტიფიცირებულია: ${data.user.id}`);
         await fetchAllData(data.user.id);
       }
     });
   }, [router]);
 
   const fetchAllData = async (myId: string) => {
-    const { data: profilesData } = await supabase
+    const { data: profilesData, error: profError } = await supabase
       .from('profiles')
       .select('id, full_name, profession, verified_badge')
       .neq('id', myId);
 
+    if (profError) {
+      setDebugInfo((prev) => prev + ` | პროფილების წაკითხვის შეცდომა: ${profError.message}`);
+    }
     if (profilesData) setUsers(profilesData);
 
-    const { data: contactsData } = await supabase
+    const { data: contactsData, error: contError } = await supabase
       .from('contacts')
       .select('contact_id')
       .eq('user_id', myId);
 
+    if (contError) {
+      setDebugInfo((prev) => prev + ` | კონტაქტების წაკითხვის შეცდომა: ${contError.message}`);
+    }
     if (contactsData) {
       setContacts(contactsData.map((c: any) => c.contact_id));
     }
   };
 
   const addContact = async (targetId: string) => {
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      alert('შეცდომა: მიმდინარე მომხმარებლის ID არ მოიძებნა!');
+      return;
+    }
+
     const { error } = await supabase.from('contacts').insert({
       user_id: currentUserId,
       contact_id: targetId,
     });
     
     if (error) {
-      alert("შეცდომა ბაზაში ჩაწერისას: " + error.message);
+      alert("ბაზაში ჩაწერის შეცდომა: " + error.message);
     } else {
       setContacts((prev) => [...prev, targetId]);
     }
@@ -56,6 +69,12 @@ export default function DirectoryPage() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <h1 className="text-xl font-bold text-slate-900 dark:text-white">კოლეგების დირექტორია</h1>
+      
+      {/* დებაგირების ველი სტატუსის სანახავად */}
+      <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs text-slate-600 dark:text-slate-300">
+        <strong>სტატუსი:</strong> {debugInfo} | იუზერი ID: {currentUserId || 'იტვირთება...'}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {users.map((u) => {
           const isAdded = contacts.includes(u.id);
