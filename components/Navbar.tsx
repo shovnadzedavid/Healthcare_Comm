@@ -1,348 +1,256 @@
 'use client';
-import { useEffect, useState, useRef, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
-  Send, 
-  CheckCircle, 
+  Home, 
   MessageSquare, 
-  Loader2, 
-  Lock, 
-  Users, 
-  ShieldCheck 
+  BookOpen, 
+  Send, 
+  User as UserIcon, 
+  LogOut, 
+  Moon, 
+  Sun,
+  Bell,
+  Check,
+  PlusCircle
 } from 'lucide-react';
 
-function MessagesContent() {
+export default function Navbar() {
+  const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialTargetUserId = searchParams.get('user');
+  const [user, setUser] = useState<any>(null);
+  const [isDark, setIsDark] = useState<boolean>(true);
 
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [profiles, setProfiles] = useState<any[]>([]);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [isContactAccepted, setIsContactAccepted] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifPopover, setShowNotifPopover] = useState<boolean>(false);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data, error }) => {
-      if (error || !data.user) {
-        router.push('/auth');
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'light') {
+        setIsDark(false);
+        document.documentElement.classList.remove('dark');
       } else {
-        setCurrentUser(data.user);
-        fetchConfirmedContacts(data.user.id, initialTargetUserId);
+        setIsDark(true);
+        document.documentElement.classList.add('dark');
       }
+    }
+
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data?.user ?? null);
+      if (data?.user) fetchNotifications(data.user.id);
     });
-  }, [router, initialTargetUserId]);
 
-  const fetchConfirmedContacts = async (myId: string, targetId: string | null) => {
-    setLoading(true);
-    try {
-      const partnerIds = new Set<string>();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) fetchNotifications(session.user.id);
+    });
 
-      const { data: contactsData } = await supabase
-        .from('contacts')
-        .select('user_id, contact_id, status')
-        .eq('status', 'accepted')
-        .or(`user_id.eq.${myId},contact_id.eq.${myId}`);
-
-      contactsData?.forEach((c: any) => {
-        if (c.user_id === myId && c.contact_id !== myId) partnerIds.add(c.contact_id);
-        if (c.contact_id === myId && c.user_id !== myId) partnerIds.add(c.user_id);
-      });
-
-      if (partnerIds.size === 0 && !targetId) {
-        setProfiles([]);
-        setSelectedUser(null);
-        setLoading(false);
-        return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifPopover(false);
       }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
 
-      let isTargetAccepted = false;
-      if (targetId && targetId !== myId) {
-        isTargetAccepted = partnerIds.has(targetId);
-        partnerIds.add(targetId);
-      }
+    return () => {
+      authListener?.subscription?.unsubscribe();
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, full_name, profession, verified_badge')
-        .in('id', Array.from(partnerIds));
-
-      if (profilesData && profilesData.length > 0) {
-        setProfiles(profilesData);
-        if (targetId) {
-          const match = profilesData.find((p) => p.id === targetId);
-          setSelectedUser(match || profilesData[0]);
-          setIsContactAccepted(isTargetAccepted);
-        } else {
-          setSelectedUser(profilesData[0]);
-          setIsContactAccepted(true);
-        }
-      } else {
-        setProfiles([]);
-        setSelectedUser(null);
-      }
-    } catch (err) {
-      console.error('Error in fetchConfirmedContacts:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (currentUser && selectedUser) {
-      checkRelationStatus(currentUser.id, selectedUser.id);
-    }
-  }, [currentUser, selectedUser]);
-
-  const checkRelationStatus = async (myId: string, targetId: string) => {
+  const fetchNotifications = async (userId: string) => {
     const { data } = await supabase
-      .from('contacts')
-      .select('status')
-      .eq('status', 'accepted')
-      .or(`and(user_id.eq.${myId},contact_id.eq.${targetId}),and(user_id.eq.${targetId},contact_id.eq.${myId})`)
-      .maybeSingle();
-
-    setIsContactAccepted(!!data);
-  };
-
-  useEffect(() => {
-    if (currentUser && selectedUser && isContactAccepted) {
-      fetchMessages();
-
-      const channel = supabase
-        .channel(`chat:${currentUser.id}-${selectedUser.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'direct_messages',
-          },
-          (payload) => {
-            const msg = payload.new;
-            if (
-              (msg.sender_id === currentUser.id && msg.receiver_id === selectedUser.id) ||
-              (msg.sender_id === selectedUser.id && msg.receiver_id === currentUser.id)
-            ) {
-              setMessages((prev) => [...prev, msg]);
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [currentUser, selectedUser, isContactAccepted]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const fetchMessages = async () => {
-    if (!currentUser || !selectedUser) return;
-    const { data } = await supabase
-      .from('direct_messages')
+      .from('notifications')
       .select('*')
-      .or(
-        `and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`
-      )
-      .order('created_at', { ascending: true });
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-    if (data) setMessages(data);
+    if (data) setNotifications(data);
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !currentUser || !selectedUser || !isContactAccepted) return;
+  const markAllAsRead = async () => {
+    if (!user) return;
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', user.id);
 
-    const content = newMessage.trim();
-    setNewMessage('');
-
-    await supabase.from('direct_messages').insert({
-      sender_id: currentUser.id,
-      receiver_id: selectedUser.id,
-      content,
-    });
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  const toggleTheme = () => {
+    if (isDark) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setIsDark(true);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push('/');
+    router.refresh();
+  };
+
+  const navItems = [
+    { name: 'მთავარი', href: '/', icon: Home },
+    { name: 'დისკუსიები', href: '/discussions', icon: MessageSquare },
+    { name: 'ბლოგი', href: '/blog', icon: BookOpen },
+    { name: 'ჩატი', href: '/messages', icon: Send },
+  ];
 
   return (
-    <div className="h-[calc(100vh-140px)] min-h-[520px] bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm flex flex-col md:flex-row">
-      <div className="w-full md:w-80 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-          <h2 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-cyan-500" />
-            დადასტურებული კონტაქტები
-          </h2>
-        </div>
-
-        <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-          {loading ? (
-            <div className="p-8 flex items-center justify-center text-slate-400 gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-cyan-500" />
-              <span className="text-xs">იტვირთება...</span>
-            </div>
-          ) : profiles.length === 0 ? (
-            <div className="p-8 text-center space-y-3">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center">
-                <Users className="w-6 h-6" />
+    <nav className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-navy-950/90 backdrop-blur-xl shadow-sm transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20">
+          <Link href="/" className="flex items-center gap-3.5 group">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-600 via-teal-500 to-amber-400 p-[2px] shadow-lg shadow-cyan-500/15 group-hover:scale-105 transition-all">
+              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center font-black text-xl text-transparent bg-clip-text bg-gradient-to-tr from-cyan-400 to-amber-300">
+                H
               </div>
-              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                კონტაქტები ჯერ არ გაქვთ
-              </p>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                დისკუსიებში ან ბლოგში დააჭირეთ ავტორის სახელს და გაუგზავნეთ კონტაქტის მოთხოვნა.
-              </p>
             </div>
-          ) : (
-            profiles.map((p) => {
-              const isSelected = selectedUser?.id === p.id;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedUser(p)}
-                  className={`w-full text-left p-3.5 flex items-center gap-3 transition-colors ${
-                    isSelected
-                      ? 'bg-cyan-500/10 dark:bg-cyan-500/15'
-                      : 'hover:bg-slate-50 dark:hover:bg-navy-950'
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-navy-800 text-slate-700 dark:text-cyan-400 flex items-center justify-center font-bold text-sm shrink-0">
-                    {p.full_name?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                  <div className="truncate flex-1">
-                    <div className="flex items-center gap-1">
-                      <span className="font-semibold text-xs text-slate-900 dark:text-white truncate">
-                        {p.full_name}
-                      </span>
-                      {p.verified_badge && <CheckCircle className="w-3.5 h-3.5 text-cyan-500 shrink-0" />}
-                    </div>
-                    <p className="text-[11px] text-slate-400 truncate">{p.profession || 'სპეციალისტი'}</p>
-                  </div>
-                </button>
-              );
-            })
+            <div className="flex flex-col">
+              <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                Healthcare<span className="text-cyan-600 dark:text-cyan-400">Comm</span>
+              </span>
+              <span className="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-400 font-bold">
+                Academic & Policy Society
+              </span>
+            </div>
+          </Link>
+
+          {user && (
+            <div className="hidden lg:flex items-center gap-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[15px] font-bold transition-all ${
+                      isActive
+                        ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 shadow-sm'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:text-slate-950 dark:hover:text-white'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </div>
           )}
-        </div>
-      </div>
 
-      <div className="flex-1 flex flex-col bg-slate-50/50 dark:bg-navy-950/50">
-        {selectedUser ? (
-          <>
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center font-bold text-sm">
-                  {selectedUser.full_name?.[0]?.toUpperCase()}
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-                    <span>{selectedUser.full_name}</span>
-                    {selectedUser.verified_badge && <ShieldCheck className="w-3.5 h-3.5 text-cyan-500" />}
-                  </div>
-                  <p className="text-[10px] text-slate-500">{selectedUser.profession || 'სპეციალისტი'}</p>
-                </div>
-              </div>
+          <div className="flex items-center gap-2.5 sm:gap-3.5">
+            {user && (
+              <div className="relative" ref={notifRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowNotifPopover(!showNotifPopover)}
+                  className="relative p-2.5 sm:p-3 rounded-2xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="შეტყობინებები"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white dark:ring-navy-950 animate-pulse" />
+                  )}
+                </button>
 
-              {isContactAccepted ? (
-                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  დადასტურებული
-                </span>
-              ) : (
-                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                  <Lock className="w-3 h-3" /> მოლოდინი
-                </span>
-              )}
-            </div>
-
-            {!isContactAccepted ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                  <Lock className="w-7 h-7" />
-                </div>
-                <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-200">
-                  ჩატი დაბლოკილია
-                </h3>
-                <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
-                  ამ კოლეგასთან მიმოწერის დასაწყებად აუცილებელია, რომ ორივემ დაადასტუროთ კონტაქტებში დამატების მოთხოვნა.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {messages.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-xs text-slate-400">
-                      დაიწყეთ პირადი მიმოწერა კოლეგასთან...
-                    </div>
-                  ) : (
-                    messages.map((m) => {
-                      const isMe = m.sender_id === currentUser?.id;
-                      return (
-                        <div
-                          key={m.id}
-                          className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                {showNotifPopover && (
+                  <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in duration-150">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                      <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
+                        შეტყობინებები
+                      </h3>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllAsRead}
+                          className="text-[11px] text-cyan-600 dark:text-cyan-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                         >
+                          <Check className="w-3.5 h-3.5" /> წაკითხულად მონიშვნა
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 mt-2">
+                      {notifications.length === 0 ? (
+                        <p className="text-center text-xs text-slate-400 py-6">
+                          ახალი შეტყობინებები არ არის
+                        </p>
+                      ) : (
+                        notifications.map((n) => (
                           <div
-                            className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed ${
-                              isMe
-                                ? 'bg-cyan-600 text-white rounded-br-none shadow-sm'
-                                : 'bg-white dark:bg-navy-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700/60 rounded-bl-none shadow-sm'
+                            key={n.id}
+                            className={`p-3 rounded-xl transition-colors ${
+                              !n.is_read ? 'bg-cyan-500/5 font-semibold' : 'text-slate-600 dark:text-slate-400'
                             }`}
                           >
-                            <p>{m.content}</p>
-                            <span className="text-[9px] block text-right mt-1 opacity-70">
-                              {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            <p className="text-xs leading-snug">{n.content}</p>
+                            <span className="text-[10px] text-slate-400 block mt-1">
+                              {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                        </div>
-                      );
-                    })
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                <form onSubmit={handleSendMessage} className="p-3 bg-white dark:bg-navy-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="დაწერეთ შეტყობინება..."
-                    className="flex-1 px-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newMessage.trim()}
-                    className="p-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl disabled:opacity-40 transition-all shadow-md shadow-cyan-500/20 cursor-pointer"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </form>
-              </>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
-          </>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-xs text-slate-400 space-y-2">
-            <MessageSquare className="w-10 h-10 text-slate-300 dark:text-slate-600" />
-            <p>აირჩიეთ დადასტურებული კონტაქტი ჩათის გასახსნელად.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
-export default function MessagesPage() {
-  return (
-    <Suspense fallback={
-      <div className="h-64 flex items-center justify-center text-slate-400">
-        <Loader2 className="w-6 h-6 animate-spin text-cyan-500" />
+            <button
+              onClick={toggleTheme}
+              className="p-2.5 sm:p-3 rounded-2xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="თემის გადართვა"
+            >
+              {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
+            </button>
+
+            {user ? (
+              <>
+                <Link
+                  href="/discussions/new"
+                  className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-teal-500 hover:opacity-95 text-white px-5 py-2.5 rounded-2xl text-sm font-extrabold shadow-md shadow-cyan-500/20 transition-all"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  ახალი თემა
+                </Link>
+                <Link
+                  href="/profile"
+                  className={`hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold border ${
+                    pathname === '/profile'
+                      ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10'
+                      : 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-400'
+                  }`}
+                >
+                  <UserIcon className="w-4 h-4" />
+                  პროფილი
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="p-2.5 sm:p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 rounded-2xl transition-colors cursor-pointer"
+                  title="გამოსვლა"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
       </div>
-    }>
-      <MessagesContent />
-    </Suspense>
+    </nav>
   );
 }
