@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import ReactionsBar from '@/components/ReactionsBar';
+import UserCardModal from '@/components/UserCardModal';
 import { 
   ArrowLeft, 
   MessageSquare, 
@@ -23,6 +24,7 @@ export default function DiscussionDetailPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedAuthor, setSelectedAuthor] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -55,7 +57,7 @@ export default function DiscussionDetailPage() {
         id,
         content,
         created_at,
-        author:profiles(full_name, profession, verified_badge)
+        author:profiles(id, full_name, profession, workplace, verified_badge)
       `)
       .eq('discussion_id', id)
       .order('created_at', { ascending: true });
@@ -66,7 +68,7 @@ export default function DiscussionDetailPage() {
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      router.push('/');
+      router.push('/auth');
       return;
     }
     if (!newComment.trim()) return;
@@ -109,39 +111,47 @@ export default function DiscussionDetailPage() {
         <ArrowLeft className="w-4 h-4" /> ყველა დისკუსია
       </Link>
 
-      {/* Main Discussion Card */}
       <article className="bg-white dark:bg-navy-900 border border-slate-300 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
-        {/* Author Header */}
+        {/* Author Header — Clickable */}
         <div className="flex items-center justify-between pb-5 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-black text-lg shadow-inner">
-              {discussion.author?.full_name?.[0] || 'U'}
+          <button
+            type="button"
+            onClick={() => discussion.author && setSelectedAuthor(discussion.author)}
+            className="flex items-center gap-3.5 text-left group cursor-pointer hover:opacity-90 transition-opacity"
+            title="დააჭირეთ ავტორის სანახავად / დასამატებლად"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-teal-400 p-[2px] shadow-sm group-hover:scale-105 transition-transform shrink-0">
+              <div className="w-full h-full bg-white dark:bg-navy-950 rounded-[14px] flex items-center justify-center font-black text-lg text-cyan-600 dark:text-cyan-400">
+                {discussion.author?.full_name?.[0]?.toUpperCase() || 'U'}
+              </div>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base text-slate-900 dark:text-white">
+                <span className="font-extrabold text-base text-slate-900 dark:text-white group-hover:text-cyan-500 transition-colors">
                   {discussion.author?.full_name}
                 </span>
                 {discussion.author?.verified_badge && (
                   <CheckCircle className="w-4 h-4 text-cyan-500" />
                 )}
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-bold border border-cyan-500/20">
+                  ავტორი
+                </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium">
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
                 {discussion.author?.profession} {discussion.author?.workplace ? `• ${discussion.author.workplace}` : ''}
               </p>
             </div>
-          </div>
+          </button>
+
           <span className="text-xs text-slate-400 font-semibold">
             {new Date(discussion.created_at).toLocaleDateString('ka-GE')}
           </span>
         </div>
 
-        {/* Title */}
         <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-snug">
           {discussion.title}
         </h1>
 
-        {/* Badges */}
         <div className="flex flex-wrap gap-2">
           {discussion.topics?.map((topic: string) => (
             <span
@@ -165,7 +175,6 @@ export default function DiscussionDetailPage() {
           )}
         </div>
 
-        {/* Content Body */}
         {discussion.is_policy_brief ? (
           <div className="space-y-4 pt-2">
             <div className="p-5 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800">
@@ -201,7 +210,6 @@ export default function DiscussionDetailPage() {
           </div>
         )}
 
-        {/* DOI / External Link */}
         {discussion.doi_or_link && (
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 flex items-center gap-2.5 text-xs sm:text-sm">
             <LinkIcon className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
@@ -217,7 +225,6 @@ export default function DiscussionDetailPage() {
           </div>
         )}
 
-        {/* Academic Reactions Bar */}
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
             პროფესიული რეაქციები:
@@ -226,14 +233,12 @@ export default function DiscussionDetailPage() {
         </div>
       </article>
 
-      {/* Comments Section */}
       <section className="bg-white dark:bg-navy-900 border border-slate-300 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
         <div className="flex items-center gap-2.5 text-lg font-black text-slate-900 dark:text-white">
           <MessageSquare className="w-5 h-5 text-cyan-500" />
           <span>გამოხმაურებები ({comments.length})</span>
         </div>
 
-        {/* Comment Input */}
         <form onSubmit={handleAddComment} className="space-y-3">
           <textarea
             rows={3}
@@ -255,7 +260,6 @@ export default function DiscussionDetailPage() {
           </div>
         </form>
 
-        {/* Comments List */}
         <div className="space-y-4 pt-2">
           {comments.length === 0 ? (
             <p className="text-center text-xs sm:text-sm text-slate-400 py-6 font-medium">
@@ -268,11 +272,18 @@ export default function DiscussionDetailPage() {
                 className="p-5 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-2"
               >
                 <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
+                  {/* Clickable Comment Author */}
+                  <button
+                    type="button"
+                    onClick={() => c.author && setSelectedAuthor(c.author)}
+                    className="flex items-center gap-2 font-bold text-slate-900 dark:text-white hover:text-cyan-500 transition-colors text-left cursor-pointer"
+                    title="დააჭირეთ ავტორის სანახავად / დასამატებლად"
+                  >
                     <span>{c.author?.full_name}</span>
                     {c.author?.verified_badge && <CheckCircle className="w-3.5 h-3.5 text-cyan-500" />}
                     <span className="text-slate-400 font-normal">• {c.author?.profession}</span>
-                  </div>
+                  </button>
+
                   <span className="text-slate-400 text-xs">
                     {new Date(c.created_at).toLocaleDateString('ka-GE')}
                   </span>
@@ -285,6 +296,13 @@ export default function DiscussionDetailPage() {
           )}
         </div>
       </section>
+
+      {/* Author Profile Quick Action Modal */}
+      <UserCardModal
+        isOpen={!!selectedAuthor}
+        onClose={() => setSelectedAuthor(null)}
+        user={selectedAuthor}
+      />
     </div>
   );
 }
