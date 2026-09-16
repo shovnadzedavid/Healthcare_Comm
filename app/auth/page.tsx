@@ -135,7 +135,7 @@ export default function AuthPage() {
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="მაგ. გიორგი ბერიძე"
+                placeholder=""
                 className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
               />
             </div>
@@ -149,7 +149,7 @@ export default function AuthPage() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="giorgi_beridze"
+                placeholder=""
                 className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
               />
             </div>
@@ -192,7 +192,7 @@ export default function AuthPage() {
                 type="text"
                 value={workplace}
                 onChange={(e) => setWorkplace(e.target.value)}
-                placeholder="მაგ. უნივერსიტეტი, კვლევითი ინსტიტუტი"
+                placeholder=""
                 className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
               />
             </div>
@@ -208,7 +208,7 @@ export default function AuthPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="example@health.ge"
+            placeholder=""
             className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
           />
         </div>
@@ -222,7 +222,7 @@ export default function AuthPage() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            placeholder=""
             className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
           />
         </div>
@@ -237,7 +237,7 @@ export default function AuthPage() {
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder=""
               className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
             />
           </div>
