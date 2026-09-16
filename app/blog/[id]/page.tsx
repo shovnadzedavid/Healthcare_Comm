@@ -263,9 +263,6 @@ export default function BlogDetailPage() {
                       title="დააჭირეთ ავტორის სანახავად / დასამატებლად"
                     >
                       <span>{c.author?.full_name}</span>
-                      {c.author?."
-                    >
-                      <span>{c.author?.full_name}</span>
                       {c.author?.verified_badge && <CheckCircle className="w-3.5 h-3.5 text-cyan-500" />}
                       {isAuthor && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20">
