@@ -19,20 +19,34 @@ export default function MessagesPage() {
         router.push('/auth');
       } else {
         setCurrentUser(data.user);
-        fetchProfiles(data.user.id);
+        fetchContacts(data.user.id);
       }
     });
   }, [router]);
 
-  const fetchProfiles = async (myId: string) => {
-    const { data } = await supabase
+  // მხოლოდ დამატებული კონტაქტების წამოღება contacts ცხრილიდან
+  const fetchContacts = async (myId: string) => {
+    const { data: contactsData, error } = await supabase
+      .from('contacts')
+      .select('contact_id')
+      .eq('user_id', myId);
+
+    if (error || !contactsData || contactsData.length === 0) {
+      setProfiles([]);
+      return;
+    }
+
+    const contactIds = contactsData.map((c: any) => c.contact_id);
+
+    // წამოვიღოთ პროფილები მხოლოდ იმ იუზერების, ვინც კონტაქტებშია
+    const { data: profilesData } = await supabase
       .from('profiles')
       .select('id, full_name, profession, verified_badge')
-      .neq('id', myId)
-      .limit(50);
-    if (data) {
-      setProfiles(data);
-      if (data.length > 0) setSelectedUser(data[0]);
+      .in('id', contactIds);
+
+    if (profilesData) {
+      setProfiles(profilesData);
+      if (profilesData.length > 0) setSelectedUser(profilesData[0]);
     }
   };
 
@@ -40,7 +54,6 @@ export default function MessagesPage() {
     if (currentUser && selectedUser) {
       fetchMessages();
 
-      // Subscribe to Realtime messages
       const channel = supabase
         .channel(`chat:${currentUser.id}-${selectedUser.id}`)
         .on(
@@ -105,13 +118,13 @@ export default function MessagesPage() {
         <div className="p-4 border-b border-slate-200 dark:border-slate-800">
           <h2 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-cyan-500" />
-            კოლეგები და დიალოგები
+            ჩემი კონტაქტები და დიალოგები
           </h2>
         </div>
 
         <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
           {profiles.length === 0 ? (
-            <p className="p-4 text-xs text-slate-400">სხვა მომხმარებლები ჯერ არ არიან.</p>
+            <p className="p-4 text-xs text-slate-400">კონტაქტები არ მოიძებნა. დაიმატეთ კოლეგები პროფილების სიიდან.</p>
           ) : (
             profiles.map((p) => {
               const isSelected = selectedUser?.id === p.id;
@@ -148,7 +161,6 @@ export default function MessagesPage() {
       <div className="flex-1 flex flex-col bg-slate-50/50 dark:bg-navy-950/50">
         {selectedUser ? (
           <>
-            {/* Chat Header */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-navy-900 flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center font-bold text-xs">
                 {selectedUser.full_name?.[0]}
@@ -162,7 +174,6 @@ export default function MessagesPage() {
               </div>
             </div>
 
-            {/* Messages Feed */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {messages.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-xs text-slate-400">
@@ -197,7 +208,6 @@ export default function MessagesPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
             <form onSubmit={handleSendMessage} className="p-3 bg-white dark:bg-navy-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
               <input
                 type="text"
@@ -217,7 +227,7 @@ export default function MessagesPage() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-xs text-slate-400">
-            აირჩიეთ კოლეგა სიიდან ჩათის დასაწყებად.
+            აირჩიეთ კონტაქტი სიიდან ჩათის დასაწყებად.
           </div>
         )}
       </div>
