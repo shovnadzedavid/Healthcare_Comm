@@ -112,7 +112,6 @@ export default function DiscussionDetailPage() {
       </Link>
 
       <article className="bg-white dark:bg-navy-900 border border-slate-300 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
-        {/* Author Header — Clickable */}
         <div className="flex items-center justify-between pb-5 border-b border-slate-200 dark:border-slate-800">
           <button
             type="button"
@@ -272,7 +271,6 @@ export default function DiscussionDetailPage() {
                 className="p-5 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-2"
               >
                 <div className="flex items-center justify-between text-xs sm:text-sm">
-                  {/* Clickable Comment Author */}
                   <button
                     type="button"
                     onClick={() => c.author && setSelectedAuthor(c.author)}
@@ -297,7 +295,6 @@ export default function DiscussionDetailPage() {
         </div>
       </section>
 
-      {/* Author Profile Modal */}
       <UserCardModal
         isOpen={!!selectedAuthor}
         onClose={() => setSelectedAuthor(null)}
