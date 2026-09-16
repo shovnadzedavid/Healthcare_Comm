@@ -158,7 +158,9 @@ export default function UserCardModal({ isOpen, onClose, user }: UserCardModalPr
             <div className="flex items-center justify-center gap-1.5 font-extrabold text-lg text-slate-900 dark:text-white">
               <span>{user.full_name}</span>
               {user.verified_badge && (
-                <ShieldCheck className="w-4 h-4 text-cyan-500" title="ვერიფიცირებული" />
+                <span title="ვერიფიცირებული">
+                  <ShieldCheck className="w-4 h-4 text-cyan-500" />
+                </span>
               )}
             </div>
 
@@ -214,7 +216,7 @@ export default function UserCardModal({ isOpen, onClose, user }: UserCardModalPr
                 <button
                   onClick={handleDeleteRelation}
                   disabled={actionLoading}
-                  className="w-full py-2 text-center text-xs font-semibold text-slate-400 hover:text-rose-500 transition-colors"
+                  className="w-full py-2 text-center text-xs font-semibold text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
                 >
                   კონტაქტიდან წაშლა
                 </button>
@@ -241,7 +243,7 @@ export default function UserCardModal({ isOpen, onClose, user }: UserCardModalPr
                 <button
                   onClick={handleDeleteRelation}
                   disabled={actionLoading}
-                  className="w-full py-2 text-center text-xs font-semibold text-slate-400 hover:text-rose-500 transition-colors"
+                  className="w-full py-2 text-center text-xs font-semibold text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
                 >
                   მოთხოვნის გაუქმება
                 </button>
