@@ -15,7 +15,9 @@ import {
   Send,
   Share2,
   Check,
-  Reply
+  Reply,
+  Copy,
+  X
 } from 'lucide-react';
 
 function formatRelativeTime(dateStr: string) {
@@ -45,6 +47,8 @@ export default function DiscussionDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedAuthor, setSelectedAuthor] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [showMemoModal, setShowMemoModal] = useState(false);
+  const [memoCopied, setMemoCopied] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -91,6 +95,29 @@ export default function DiscussionDetailPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     }
+  };
+
+  const handleCopyMemo = () => {
+    if (!discussion) return;
+    const memoText = `საპოლიტიკო მემორანდუმი (POLICY MEMORANDUM)
+თემა: ${discussion.title}
+ავტორი: ${discussion.author?.full_name || 'ანონიმური'} (${discussion.author?.profession || ''}, ${discussion.author?.workplace || ''})
+თარიღი: ${new Date(discussion.created_at).toLocaleDateString('ka-GE')}
+
+1. სისტემური პრობლემა & კონტექსტი:
+${discussion.policy_problem || discussion.content}
+
+2. სისტემური მტკიცებულებები & კვლევა:
+${discussion.policy_evidence || 'მითითებული არ არის'}
+
+3. პოლიტიკის რეკომენდაციები:
+${discussion.policy_recommendations || 'მითითებული არ არის'}
+
+HealthcareComm - Health Policy & Academic Society`;
+
+    navigator.clipboard.writeText(memoText);
+    setMemoCopied(true);
+    setTimeout(() => setMemoCopied(false), 2500);
   };
 
   const handleAddComment = async (e: React.FormEvent) => {
@@ -181,14 +208,26 @@ export default function DiscussionDetailPage() {
           <ArrowLeft className="w-4 h-4" /> ყველა დისკუსია
         </Link>
 
-        <button
-          onClick={handleCopyLink}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 shadow-xs transition-all cursor-pointer active:scale-95"
-          title="ბმულის კოპირება"
-        >
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5 text-cyan-500" />}
-          <span>{copied ? 'ბმული დაკოპირდა!' : 'გაზიარება'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {discussion.is_policy_brief && (
+            <button
+              onClick={() => setShowMemoModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-500/15 border border-purple-300 dark:border-purple-500/30 hover:opacity-90 shadow-xs transition-all cursor-pointer active:scale-95"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>საპოლიტიკო მემორანდუმი</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleCopyLink}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 shadow-xs transition-all cursor-pointer active:scale-95"
+            title="ბმულის კოპირება"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5 text-cyan-500" />}
+            <span>{copied ? 'ბმული დაკოპირდა!' : 'გაზიარება'}</span>
+          </button>
+        </div>
       </div>
 
       <article className="bg-white dark:bg-navy-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
@@ -217,7 +256,7 @@ export default function DiscussionDetailPage() {
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                {discussion.author?.profession} {discussion.author?.workplace ? `• ${discussion.author.workplace}` : ''}
+                {discussion.author?.profession || 'ჯანდაცვის მკვლევარი'} {discussion.author?.workplace ? `• ${discussion.author.workplace}` : ''}
               </p>
             </div>
           </button>
@@ -242,13 +281,13 @@ export default function DiscussionDetailPage() {
           ))}
 
           {discussion.is_policy_brief && (
-            <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-500/30 flex items-center gap-1.5">
+            <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30 flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5" /> Policy Brief
             </span>
           )}
 
           {discussion.seeking_collaborators && (
-            <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30 flex items-center gap-1.5">
+            <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5" /> თანამშრომლობა
             </span>
           )}
@@ -258,7 +297,7 @@ export default function DiscussionDetailPage() {
           <div className="space-y-4 pt-2">
             <div className="p-5 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800">
               <h3 className="text-xs font-black uppercase tracking-wider text-purple-600 dark:text-purple-400 mb-1.5">
-                1. პრობლემა & კონტექსტი
+                1. სისტემური პრობლემა & კონტექსტი
               </h3>
               <p className="text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap font-medium">
                 {discussion.policy_problem || discussion.content}
@@ -267,7 +306,7 @@ export default function DiscussionDetailPage() {
 
             <div className="p-5 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800">
               <h3 className="text-xs font-black uppercase tracking-wider text-purple-600 dark:text-purple-400 mb-1.5">
-                2. მტკიცებულებები & კვლევა
+                2. სისტემური მტკიცებულებები & კვლევა
               </h3>
               <p className="text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap font-medium">
                 {discussion.policy_evidence}
@@ -276,7 +315,7 @@ export default function DiscussionDetailPage() {
 
             <div className="p-5 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800">
               <h3 className="text-xs font-black uppercase tracking-wider text-purple-600 dark:text-purple-400 mb-1.5">
-                3. რეკომენდაციები
+                3. პოლიტიკის რეკომენდაციები
               </h3>
               <p className="text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap font-medium">
                 {discussion.policy_recommendations}
@@ -292,7 +331,7 @@ export default function DiscussionDetailPage() {
         {discussion.doi_or_link && (
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 flex items-center gap-2.5 text-xs sm:text-sm">
             <LinkIcon className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
-            <span className="text-slate-500 font-semibold">სამეცნიერო რესურსი:</span>
+            <span className="text-slate-500 font-semibold">სამეცნიერო/სისტემური რესურსი:</span>
             <a
               href={discussion.doi_or_link}
               target="_blank"
@@ -312,10 +351,85 @@ export default function DiscussionDetailPage() {
         </div>
       </article>
 
+      {/* Policy Brief Memorandum Modal */}
+      {showMemoModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setShowMemoModal(false)}
+        >
+          <div 
+            className="relative w-full max-w-2xl bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                  საპოლიტიკო მემორანდუმი (Policy Brief)
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowMemoModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
+              <div className="p-4 bg-slate-50 dark:bg-navy-950 rounded-2xl space-y-1.5 border border-slate-100 dark:border-slate-800">
+                <p><strong className="text-slate-900 dark:text-white">დოკუმენტი:</strong> {discussion.title}</p>
+                <p><strong className="text-slate-900 dark:text-white">ავტორი:</strong> {discussion.author?.full_name} ({discussion.author?.profession || 'ექსპერტი'})</p>
+                <p><strong className="text-slate-900 dark:text-white">ინსტიტუცია:</strong> {discussion.author?.workplace || 'საზოგადოებრივი ჯანდაცვის ინსტიტუტი'}</p>
+                <p><strong className="text-slate-900 dark:text-white">თარიღი:</strong> {new Date(discussion.created_at).toLocaleDateString('ka-GE')}</p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider text-xs">
+                  1. სისტემური პრობლემა & კონტექსტი
+                </h4>
+                <p className="p-3 bg-slate-50 dark:bg-navy-950 rounded-xl leading-relaxed whitespace-pre-wrap">
+                  {discussion.policy_problem || discussion.content}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider text-xs">
+                  2. სისტემური მტკიცებულებები
+                </h4>
+                <p className="p-3 bg-slate-50 dark:bg-navy-950 rounded-xl leading-relaxed whitespace-pre-wrap">
+                  {discussion.policy_evidence || 'მითითებული არ არის'}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider text-xs">
+                  3. პოლიტიკის რეკომენდაციები
+                </h4>
+                <p className="p-3 bg-slate-50 dark:bg-navy-950 rounded-xl leading-relaxed whitespace-pre-wrap">
+                  {discussion.policy_recommendations || 'მითითებული არ არის'}
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+              <button
+                onClick={handleCopyMemo}
+                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 text-white font-extrabold text-xs flex items-center gap-2 shadow-md shadow-purple-600/20 active:scale-95 transition-all cursor-pointer"
+              >
+                {memoCopied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                <span>{memoCopied ? 'მემორანდუმი დაკოპირდა!' : 'ტექსტის კოპირება'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Comments Section */}
       <section className="bg-white dark:bg-navy-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
         <div className="flex items-center gap-2.5 text-lg font-black text-slate-900 dark:text-white">
           <MessageSquare className="w-5 h-5 text-cyan-500" />
-          <span>გამოხმაურებები ({comments.length})</span>
+          <span>პროფესიული გამოხმაურებები ({comments.length})</span>
         </div>
 
         <form onSubmit={handleAddComment} className="space-y-3">
@@ -323,7 +437,7 @@ export default function DiscussionDetailPage() {
             rows={3}
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder={user ? "გამოხატეთ თქვენი პროფესიული მოსაზრება..." : "გაიარეთ ავტორიზაცია პასუხის დასატოვებლად..."}
+            placeholder={user ? "გამოხატეთ თქვენი სისტემური/საპოლიტიკო პოზიცია..." : "გაიარეთ ავტორიზაცია პასუხის დასატოვებლად..."}
             disabled={!user || submitting}
             className="w-full p-4 text-sm sm:text-base bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white font-medium disabled:opacity-50 shadow-xs placeholder-slate-400 transition-all"
           />
