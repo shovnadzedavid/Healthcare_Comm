@@ -8,7 +8,8 @@ import {
   LogIn, 
   Moon, 
   Sun,
-  Plus
+  Plus,
+  Search
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -74,48 +75,45 @@ export default function Navbar() {
   };
 
   const navItems = [
-    { name: '🔥 ჰაბი', href: '/' },
-    { name: '💡 დისკუსიები', href: '/discussions' },
-    { name: '📑 ბლოგი & Briefs', href: '/blog' },
-    { name: '💬 ჩატი', href: '/messages' },
+    { name: 'მთავარი', href: '/' },
+    { name: 'დისკუსიები', href: '/discussions' },
+    { name: 'პუბლიკაციები', href: '/blog' },
+    { name: 'შეტყობინებები', href: '/messages' },
   ];
 
   return (
-    <nav className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/85 dark:bg-[#0c101c]/85 backdrop-blur-xl transition-all">
+    <nav className="sticky top-0 z-40 w-full border-b border-slate-200/90 dark:border-slate-800/90 bg-white/90 dark:bg-[#090d16]/90 backdrop-blur-md transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Playful Tech Logo */}
+          {/* Logo */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-400 p-[2px] shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-                <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center font-black text-sm text-transparent bg-clip-text bg-gradient-to-tr from-indigo-300 via-purple-200 to-cyan-300">
-                  H+
-                </div>
+              <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center font-bold text-sm tracking-tighter transition-transform group-hover:scale-105">
+                HC
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-                  Healthcare<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-400">Comm</span>
+                <span className="text-sm sm:text-base font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
+                  Healthcare<span className="text-indigo-600 dark:text-indigo-400 font-medium">Comm</span>
                 </span>
-                <span className="text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-                  Academic Network
+                <span className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold">
+                  Health Policy & Management
                 </span>
               </div>
             </Link>
           </div>
 
-          {/* Nav Pills */}
-          <div className="hidden md:flex items-center gap-1.5 bg-slate-100/80 dark:bg-[#14192b]/80 p-1.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/60">
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
                     isActive
-                      ? 'bg-white dark:bg-indigo-600 text-slate-900 dark:text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/40'
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >
                   {item.name}
@@ -124,15 +122,16 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Right Actions */}
+          {/* Right Section */}
           <div className="flex items-center gap-2.5">
-            {/* Quick Search Pill */}
+            {/* Quick Search */}
             <Link
               href="/discussions"
-              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#14192b] border border-slate-200 dark:border-slate-800 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
             >
-              <span>🔍 ძიება...</span>
-              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 text-slate-500">
+              <Search className="w-3.5 h-3.5" />
+              <span>ძიება...</span>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 text-slate-400">
                 ⌘K
               </kbd>
             </Link>
@@ -140,37 +139,37 @@ export default function Navbar() {
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+              className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               title="თემის შეცვლა"
             >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+              {isDark ? <Sun className="w-4 h-4 text-slate-300" /> : <Moon className="w-4 h-4 text-slate-600" />}
             </button>
 
             {user ? (
               <>
                 <Link
                   href="/discussions/new"
-                  className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-95 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+                  className="hidden sm:flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer"
                 >
-                  <Plus className="w-4 h-4" />
-                  ახალი თემა
+                  <Plus className="w-3.5 h-3.5" />
+                  ახალი დისკუსია
                 </Link>
                 <Link
                   href="/profile"
-                  className={`flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl text-xs font-bold border transition-all ${
+                  className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
                     pathname === '/profile'
-                      ? 'border-indigo-500 text-indigo-500 bg-indigo-500/10'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-slate-400 bg-slate-100/50 dark:bg-[#14192b]'
+                      ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/20'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
                 >
-                  <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-extrabold shadow-xs">
+                  <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 text-[10px] font-bold">
                     {(profile?.full_name || user.email || 'U')[0].toUpperCase()}
                   </div>
                   <span>{profile?.full_name ? profile.full_name.split(' ')[0] : 'პროფილი'}</span>
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer"
+                  className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg transition-colors cursor-pointer"
                   title="გამოსვლა"
                 >
                   <LogOut className="w-4 h-4" />
@@ -178,10 +177,10 @@ export default function Navbar() {
               </>
             ) : (
               <Link
-                href="/"
-                className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 hover:opacity-95 transition-all"
+                href="/auth"
+                className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition-all"
               >
-                <LogIn className="w-4 h-4" />
+                <LogIn className="w-3.5 h-3.5" />
                 შესვლა
               </Link>
             )}
