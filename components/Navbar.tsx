@@ -15,9 +15,7 @@ import {
   Sun, 
   Bell, 
   Check, 
-  PlusCircle, 
-  Users, 
-  Shield 
+  PlusCircle 
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -25,8 +23,6 @@ export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [isDark, setIsDark] = useState<boolean>(true);
-  const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
-  const [siteTexts, setSiteTexts] = useState<Record<string, string>>({});
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifPopover, setShowNotifPopover] = useState<boolean>(false);
@@ -41,17 +37,6 @@ export default function Navbar() {
       } else {
         setIsDark(true);
         document.documentElement.classList.add('dark');
-      }
-
-      // Check if Admin CMS mode is active
-      setIsAdminMode(localStorage.getItem('hc_admin_cms_mode') === 'true');
-
-      // Load custom texts
-      const savedTexts = localStorage.getItem('hc_site_texts');
-      if (savedTexts) {
-        try {
-          setSiteTexts(JSON.parse(savedTexts));
-        } catch {}
       }
     }
 
@@ -76,7 +61,7 @@ export default function Navbar() {
       authListener.subscription.unsubscribe();
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [pathname]);
+  }, []);
 
   const fetchNotifications = async (userId: string) => {
     const { data } = await supabase
@@ -85,12 +70,17 @@ export default function Navbar() {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(10);
+
     if (data) setNotifications(data);
   };
 
   const markAllAsRead = async () => {
     if (!user) return;
-    await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id);
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', user.id);
+
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 
@@ -115,12 +105,12 @@ export default function Navbar() {
     router.refresh();
   };
 
+  // მხოლოდ 4 ძირითადი გვერდი (კოლეგების გარეშე)
   const navItems = [
-    { name: siteTexts['nav_home'] || 'მთავარი', href: '/', icon: Home },
-    { name: siteTexts['nav_discussions'] || 'დისკუსიები', href: '/discussions', icon: MessageSquare },
-    { name: siteTexts['nav_blog'] || 'ბლოგი', href: '/blog', icon: BookOpen },
-    { name: siteTexts['nav_directory'] || 'კოლეგები', href: '/directory', icon: Users },
-    { name: siteTexts['nav_messages'] || 'ჩატი', href: '/messages', icon: Send },
+    { name: 'მთავარი', href: '/', icon: Home },
+    { name: 'დისკუსიები', href: '/discussions', icon: MessageSquare },
+    { name: 'ბლოგი', href: '/blog', icon: BookOpen },
+    { name: 'ჩატი', href: '/messages', icon: Send },
   ];
 
   return (
@@ -135,15 +125,10 @@ export default function Navbar() {
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white leading-tight flex items-center gap-2">
+              <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
                 Healthcare<span className="text-cyan-600 dark:text-cyan-400">Comm</span>
-                {isAdminMode && (
-                  <span className="text-[10px] bg-cyan-500/20 text-cyan-500 dark:text-cyan-400 px-2 py-0.5 rounded-md font-mono border border-cyan-500/30 flex items-center gap-1">
-                    <Shield className="w-3 h-3" /> CMS
-                  </span>
-                )}
               </span>
-              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+              <span className="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-400 font-bold">
                 Academic & Policy Society
               </span>
             </div>
@@ -188,7 +173,7 @@ export default function Navbar() {
                 </button>
 
                 {showNotifPopover && (
-                  <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-4 z-50">
+                  <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in duration-150">
                     <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                       <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
                         შეტყობინებები
@@ -202,55 +187,15 @@ export default function Navbar() {
                         </button>
                       )}
                     </div>
+
                     <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 mt-2">
                       {notifications.length === 0 ? (
-                        <p className="text-center text-xs text-slate-400 py-6">ახალი შეტყობინებები არ არის</p>
+                        <p className="text-center text-xs text-slate-400 py-6">
+                          ახალი შეტყობინებები არ არის
+                        </p>
                       ) : (
                         notifications.map((n) => (
-                          <div key={n.id} className="p-3 rounded-xl text-xs">
-                            <p>{n.content}</p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 sm:p-3 rounded-2xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="თემის გადართვა"
-            >
-              {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
-            </button>
-
-            {user ? (
-              <>
-                <Link
-                  href="/profile"
-                  className={`hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold border ${
-                    pathname === '/profile'
-                      ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10'
-                      : 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-400'
-                  }`}
-                >
-                  <UserIcon className="w-4 h-4" />
-                  პროფილი
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="p-2.5 sm:p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 rounded-2xl transition-colors cursor-pointer"
-                  title="გამოსვლა"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
-              </>
-            ) : null}
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
-}
+                          <div
+                            key={n.id}
+                            className={`p-3 rounded-xl transition-colors ${
+                              !n.is_read ? 'bg-cyan-500/5 font-semibold' : 'text-slate-600
