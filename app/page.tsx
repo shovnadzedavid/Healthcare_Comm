@@ -10,7 +10,7 @@ export default function HomePage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
 
   // Form states
   const [email, setEmail] = useState('');
@@ -22,7 +22,7 @@ export default function HomePage() {
   const [profession, setProfession] = useState('საზოგადოებრივი ჯანდაცვა');
   const [workplace, setWorkplace] = useState('');
 
-  // თუ მომხმარებელი უკვე შესულია, გადაიყვანს პირდაპირ დისკუსიებზე
+  // თუ მომხმარებელი უკვე შესულია, გადაიყვანს დისკუსიებზე
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
@@ -31,21 +31,21 @@ export default function HomePage() {
     });
   }, [router]);
 
-  const handleGoogleLogin = async () => {
+  const handleOAuthLogin = async (provider: 'google' | 'linkedin_oidc') => {
     try {
-      setGoogleLoading(true);
+      setSocialLoading(provider);
       setErrorMsg('');
       const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/discussions` : undefined;
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider,
         options: {
           redirectTo: redirectUrl,
         },
       });
       if (error) throw error;
     } catch (err: any) {
-      setErrorMsg(err.message || 'Google-ით ავტორიზაცია ვერ მოხერხდა');
-      setGoogleLoading(false);
+      setErrorMsg(err.message || 'ავტორიზაცია ვერ მოხერხდა');
+      setSocialLoading(null);
     }
   };
 
@@ -125,12 +125,12 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Google-ით ავტორიზაცია */}
-      <div className="mb-5">
+      {/* Social Login Buttons (Google & LinkedIn) */}
+      <div className="mb-5 space-y-2.5">
         <button
           type="button"
-          onClick={handleGoogleLogin}
-          disabled={googleLoading || loading}
+          onClick={() => handleOAuthLogin('google')}
+          disabled={!!socialLoading || loading}
           className="w-full py-2.5 px-4 bg-white dark:bg-navy-950 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -139,7 +139,19 @@ export default function HomePage() {
             <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
             <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
           </svg>
-          <span>{googleLoading ? 'მიმდინარეობს გადამისამართება...' : 'Google-ით ავტორიზაცია'}</span>
+          <span>{socialLoading === 'google' ? 'გადამისამართება Google-ზე...' : 'Google-ით ავტორიზაცია'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleOAuthLogin('linkedin_oidc')}
+          disabled={!!socialLoading || loading}
+          className="w-full py-2.5 px-4 bg-[#0A66C2] hover:bg-[#004182] text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
+        >
+          <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+            <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.63 1.63 0 1 0 0-3.25 1.63 1.63 0 0 0 0 3.25m1.39 9.74V9.95H5.07v8.55h2.78z" />
+          </svg>
+          <span>{socialLoading === 'linkedin_oidc' ? 'გადამისამართება LinkedIn-ზე...' : 'LinkedIn-ით ავტორიზაცია'}</span>
         </button>
 
         <div className="relative flex items-center justify-center my-4">
