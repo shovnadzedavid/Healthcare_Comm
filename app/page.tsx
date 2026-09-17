@@ -8,32 +8,26 @@ import {
   UserPlus, 
   AlertCircle, 
   CheckCircle2, 
-  ArrowUpRight, 
+  ArrowRight, 
   MessageSquare, 
+  BookOpen, 
   Plus, 
-  ShieldCheck
+  FileText, 
+  Users,
+  CheckCircle
 } from 'lucide-react';
-
-const FILTER_TOPICS = [
-  { id: 'ყველა', label: 'ყველა მიმართულება' },
-  { id: 'ჯანდაცვის მენეჯმენტი', label: 'კლინიკური მენეჯმენტი და DRG' },
-  { id: 'საზოგადოებრივი ჯანდაცვა', label: 'საზოგადოებრივი ჯანდაცვა' },
-  { id: 'ჯანდაცვის პოლიტიკა', label: 'ჯანდაცვის პოლიტიკა და ეკონომიკა' },
-  { id: 'კვლევა', label: 'სამეცნიერო თანამშრომლობა' },
-];
 
 export default function HomePage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
-  // Feed states
-  const [discussions, setDiscussions] = useState<any[]>([]);
-  const [selectedTopic, setSelectedTopic] = useState('ყველა');
-  const [loadingFeed, setLoadingFeed] = useState(false);
+  // Feed data (ორიგინალი 2-სვეტიანი სტრუქტურა)
+  const [topDiscussions, setTopDiscussions] = useState<any[]>([]);
+  const [topBlogs, setTopBlogs] = useState<any[]>([]);
+  const [loadingFeed, setLoadingFeed] = useState(true);
 
-  // Auth states
+  // Auth states (თუ მომხმარებელი არ არის შესული)
   const [isLogin, setIsLogin] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -53,60 +47,60 @@ export default function HomePage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
-      if (data.user) {
-        supabase.from('profiles').select('*').eq('id', data.user.id).single().then(({ data: p }) => {
-          if (p) setProfile(p);
-        });
-      }
       setLoadingUser(false);
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        supabase.from('profiles').select('*').eq('id', session.user.id).single().then(({ data: p }) => {
-          if (p) setProfile(p);
-        });
-      }
     });
+
+    loadData();
 
     return () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      fetchDiscussions();
-    }
-  }, [user, selectedTopic]);
-
-  const fetchDiscussions = async () => {
+  const loadData = async () => {
     setLoadingFeed(true);
-    let query = supabase
-      .from('discussions')
-      .select(`
-        id,
-        title,
-        content,
-        topics,
-        is_policy_brief,
-        seeking_collaborators,
-        created_at,
-        author:profiles(full_name, profession, verified_badge),
-        comments:discussion_comments(count)
-      `)
-      .order('created_at', { ascending: false });
+    try {
+      const [discRes, blogRes] = await Promise.all([
+        supabase
+          .from('discussions')
+          .select(`
+            id,
+            title,
+            content,
+            topics,
+            is_policy_brief,
+            seeking_collaborators,
+            created_at,
+            author:profiles(full_name, profession, verified_badge),
+            comments:discussion_comments(count)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5),
+        supabase
+          .from('blog_posts')
+          .select(`
+            id,
+            title,
+            content,
+            created_at,
+            author:profiles(full_name, profession, verified_badge),
+            comments:blog_comments(count)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5)
+      ]);
 
-    if (selectedTopic !== 'ყველა') {
-      query = query.contains('topics', [selectedTopic]);
+      if (discRes.data) setTopDiscussions(discRes.data);
+      if (blogRes.data) setTopBlogs(blogRes.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingFeed(false);
     }
-
-    const { data } = await query;
-    if (data) {
-      setDiscussions(data);
-    }
-    setLoadingFeed(false);
   };
 
   const handleOAuthLogin = async (provider: 'google' | 'linkedin_oidc') => {
@@ -184,7 +178,7 @@ export default function HomePage() {
     );
   }
 
-  // 1. არაავტორიზებული მომხმარებლისთვის: სუფთა პროფესიული ავტორიზაცია
+  // 1. არაავტორიზებული მომხმარებლისთვის: ავტორიზაციის ფორმა (Google და LinkedIn-ით)
   if (!user) {
     return (
       <div className="min-h-[calc(100vh-140px)] flex items-center justify-center p-4">
@@ -199,7 +193,7 @@ export default function HomePage() {
             </h1>
 
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
-              ჯანდაცვის პოლიტიკისა და მენეჯმენტის დახურული პროფესიული სივრცე
+              დახურული სივრცე ჯანდაცვის სფეროს სპეციალისტებისთვის
             </p>
           </div>
 
@@ -217,7 +211,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Social Buttons */}
+          {/* Social OAuth Buttons */}
           <div className="space-y-2.5">
             <button
               type="button"
@@ -419,154 +413,204 @@ export default function HomePage() {
     );
   }
 
-  // 2. ავტორიზებული მომხმარებლისთვის: სერიოზული და ტექნოლოგიური მთავარი პანელი
-  const displayName = profile?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'კოლეგა';
-
+  // ==========================================
+  // VIEW 2: ORIGINAL 2-COLUMN STRUCTURE (MAIN DASHBOARD)
+  // ==========================================
   return (
-    <div className="space-y-6">
-      {/* საინფორმაციო ბანერი */}
+    <div className="space-y-8">
+      {/* 1. Header Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs">
-        <div className="max-w-3xl space-y-2">
+        <div className="max-w-3xl space-y-2.5">
           <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-            პროფესიული პლატფორმა
+            პროფესიული სივრცე
           </span>
 
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            მოგესალმებით, {displayName}
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Healthcare<span className="text-indigo-600 dark:text-indigo-400 font-medium">Comm</span>
           </h1>
 
-          <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
-            ჯანდაცვის პოლიტიკისა და მართვის აკადემიური სივრცე. გაუზიარეთ კვლევითი მიგნებები კოლეგებს და ჩაერთეთ საექსპერტო დისკუსიებში.
+          <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed">
+            დახურული ქომუნითი ჯანდაცვის პოლიტიკის, მენეჯმენტის, ეპიდემიოლოგიისა და კვლევების სპეციალისტებისთვის. გაუზიარეთ მიგნებები და ითანამშრომლეთ კოლეგებთან.
           </p>
 
-          <div className="pt-2 flex flex-wrap items-center gap-3">
+          <div className="pt-2 flex flex-wrap gap-3">
             <Link
               href="/discussions/new"
-              className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-xs transition-all"
+              className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 px-4 py-2 rounded-xl text-xs font-semibold shadow-xs transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
-              ახალი დისკუსიის დაწყება
+              + გახსენით დისკუსია
             </Link>
             <Link
-              href="/discussions"
-              className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-[#141a29] hover:bg-slate-200 dark:hover:bg-[#1a2236] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all"
+              href="/blog/new"
+              className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-[#141a29] hover:bg-slate-200 dark:hover:bg-[#1a2236] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl text-xs font-semibold transition-all"
             >
-              დისკუსიების არქივი
+              <Plus className="w-3.5 h-3.5" />
+              + გამოაქვეყნეთ ბლოგი
             </Link>
           </div>
         </div>
       </div>
 
-      {/* ფილტრების ზოლი */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-slate-200 dark:border-slate-800/80">
-        {FILTER_TOPICS.map((t) => {
-          const isSelected = selectedTopic === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setSelectedTopic(t.id)}
-              className={`px-3.5 py-2 text-xs font-semibold transition-all whitespace-nowrap cursor-pointer border-b-2 -mb-[1px] ${
-                isSelected
-                  ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400'
-                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* დისკუსიების სია და ჰოვერ-ეფექტები */}
-      <div className="space-y-3.5">
-        {loadingFeed ? (
-          <div className="py-16 text-center text-slate-400 font-medium text-xs animate-pulse">
-            დისკუსიები იტვირთება...
-          </div>
-        ) : discussions.length === 0 ? (
-          <div className="p-10 text-center rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 text-slate-500 space-y-2">
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              არჩეულ მიმართულებაზე დისკუსია ჯერ არ არის
-            </h3>
-            <p className="text-xs text-slate-400">
-              წამოიწყეთ პროფესიული დიალოგი კოლეგებთან.
-            </p>
-            <Link
-              href="/discussions/new"
-              className="inline-flex items-center gap-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-950 px-3.5 py-1.5 rounded-lg text-xs font-semibold mt-2"
-            >
-              <Plus className="w-3.5 h-3.5" /> წამოიწყეთ დისკუსია
-            </Link>
-          </div>
-        ) : (
-          discussions.map((item) => (
-            <Link
-              key={item.id}
-              href={`/discussions/${item.id}`}
-              className="block p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-600 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm group"
-            >
-              <div className="flex items-center justify-between gap-3 mb-2.5">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">
-                    {item.author?.full_name || 'სპეციალისტი'}
-                  </span>
-                  {item.author?.verified_badge && (
-                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
-                  )}
-                  <span className="text-slate-400">•</span>
-                  <span className="text-slate-500 dark:text-slate-400">
-                    {item.author?.profession || 'ჯანდაცვა'}
-                  </span>
-                  <span className="text-slate-400">•</span>
-                  <span className="text-slate-400">
-                    {new Date(item.created_at).toLocaleDateString('ka-GE')}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  {item.is_policy_brief && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                      Policy Brief
-                    </span>
-                  )}
-                  {item.seeking_collaborators && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border border-slate-200 dark:border-slate-700">
-                      თანამშრომლობა
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2">
-                {item.title}
+      {/* 2. Grid: Top Discussions & Top Blogs (ორიგინალი 2 სვეტი) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* სვეტი 1: ტოპ-5 აქტიური დისკუსია */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                ტოპ-5 აქტიური დისკუსია
               </h2>
-
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed mb-3.5">
-                {item.content}
-              </p>
-
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {item.topics?.map((topic: string) => (
-                    <span
-                      key={topic}
-                      className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400"
-                    >
-                      {topic}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white font-medium transition-colors">
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>{item.comments?.[0]?.count || 0} პასუხი</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 ml-1 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                </div>
-              </div>
+            </div>
+            <Link
+              href="/discussions"
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+            >
+              ყველა დისკუსია <ArrowRight className="w-3 h-3" />
             </Link>
-          ))
-        )}
+          </div>
+
+          <div className="space-y-3">
+            {loadingFeed ? (
+              <div className="p-8 text-center text-slate-400 text-xs animate-pulse">
+                იტვირთება...
+              </div>
+            ) : topDiscussions.length === 0 ? (
+              <div className="p-8 text-center bg-white dark:bg-[#0d121f] rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 text-xs">
+                დისკუსიები ჯერ არ არის. იყავით პირველი, ვინც წამოიწყებს თემას!
+              </div>
+            ) : (
+              topDiscussions.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/discussions/${item.id}`}
+                  className="block p-5 bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-600 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs group"
+                >
+                  <div className="flex items-center gap-2 mb-2 text-xs">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {item.author?.full_name || 'მომხმარებელი'}
+                    </span>
+                    {item.author?.verified_badge && (
+                      <CheckCircle className="w-3.5 h-3.5 text-indigo-500" />
+                    )}
+                    <span className="text-slate-400">•</span>
+                    <span className="text-slate-500 dark:text-slate-400">{item.author?.profession || 'ჯანდაცვა'}</span>
+                  </div>
+
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 mb-2">
+                    {item.title}
+                  </h3>
+
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    {item.topics?.map((topic: string) => (
+                      <span
+                        key={topic}
+                        className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+
+                    {item.is_policy_brief && (
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50 flex items-center gap-1">
+                        <FileText className="w-3 h-3" /> Policy Brief
+                      </span>
+                    )}
+
+                    {item.seeking_collaborators && (
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-1">
+                        <Users className="w-3 h-3" /> თანამშრომლობა
+                      </span>
+                    )}
+
+                    <div className="ml-auto text-xs text-slate-400 flex items-center gap-1 font-medium">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {item.comments?.[0]?.count || 0} პასუხი
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* სვეტი 2: ტოპ-5 ბლოგ-პოსტი & ანალიტიკა */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                ტოპ-5 ბლოგ-პოსტი & ანალიტიკა
+              </h2>
+            </div>
+            <Link
+              href="/blog"
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+            >
+              ყველა ბლოგი <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="space-y-3">
+            {loadingFeed ? (
+              <div className="p-8 text-center text-slate-400 text-xs animate-pulse">
+                იტვირთება...
+              </div>
+            ) : topBlogs.length === 0 ? (
+              <div className="p-8 text-center bg-white dark:bg-[#0d121f] rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 text-xs">
+                ბლოგ-სტატიები ჯერ არ არის. გაუზიარეთ თქვენი ანალიტიკური სტატია კოლეგებს!
+              </div>
+            ) : (
+              topBlogs.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/blog/${item.id}`}
+                  className="block p-5 bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-600 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs group"
+                >
+                  <div className="flex items-center gap-2 mb-2 text-xs">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {item.author?.full_name || 'ავტორი'}
+                    </span>
+                    <span className="text-slate-400">•</span>
+                    <span className="text-slate-500 dark:text-slate-400">{item.author?.profession || 'სპეციალისტი'}</span>
+                  </div>
+
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors line-clamp-2 mb-2">
+                    {item.title}
+                  </h3>
+
+                  <div className="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    <span>{new Date(item.created_at).toLocaleDateString('ka-GE')}</span>
+                    <div className="flex items-center gap-1 font-medium">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {item.comments?.[0]?.count || 0} კომენტარი
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </section>
+
       </div>
     </div>
   );
 }
+EOF
+
+node -e "
+const parser = require('/usr/share/nodejs/@babel/parser');
+const fs = require('fs');
+const code = fs.readFileSync('/working_dir/exact_page.tsx', 'utf8');
+try {
+  parser.parse(code, {
+    sourceType: 'module',
+    plugins: ['jsx', 'typescript']
+  });
+  console.log('EXACT PAGE PARSED 100% CLEAN!');
+} catch (e) {
+  console.error('ERROR in exact_page.tsx:', e.message);
+}
+"
