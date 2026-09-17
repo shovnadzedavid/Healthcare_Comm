@@ -12,7 +12,13 @@ import {
   CheckCircle2, 
   PlayCircle,
   Tag,
-  Award
+  Award,
+  Plus,
+  Edit2,
+  Trash2,
+  X,
+  Save,
+  ShieldCheck
 } from 'lucide-react';
 
 interface Masterclass {
@@ -27,6 +33,8 @@ interface Masterclass {
   currency: string;
   scheduled_at: string;
   duration_minutes: number;
+  stream_url?: string;
+  recording_url?: string;
   is_live: boolean;
   is_completed: boolean;
   learning_points?: string[];
@@ -45,6 +53,7 @@ const DEFAULT_MASTERCLASSES: Masterclass[] = [
     currency: 'GEL',
     scheduled_at: new Date(Date.now() + 86400000 * 3).toISOString(),
     duration_minutes: 90,
+    stream_url: 'https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1',
     is_live: true,
     is_completed: false,
     learning_points: [
@@ -80,9 +89,40 @@ export default function MasterclassesPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'archive'>('all');
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Partial<Masterclass> | null>(null);
+  const [learningPointsInput, setLearningPointsInput] = useState('');
+  const [saveLoading, setSaveLoading] = useState(false);
+
   useEffect(() => {
     loadMasterclasses();
+    checkAdminRole();
   }, []);
+
+  const checkAdminRole = async () => {
+    try {
+      const { data } = await supabase.auth.getUser();
+      const currentUser = data?.user;
+      if (currentUser) {
+        if (currentUser.email === 'shovnadzedavid@gmail.com') {
+          setIsAdmin(true);
+        } else {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+
+          if (profile?.is_admin) {
+            setIsAdmin(true);
+          }
+        }
+      }
+    } catch {
+      // Fallback
+    }
+  };
 
   const loadMasterclasses = async () => {
     try {
@@ -103,6 +143,148 @@ export default function MasterclassesPage() {
     }
   };
 
+  const handleOpenCreate = () => {
+    const nextWeek = new Date(Date.now() + 86400000 * 7);
+    setEditingItem({
+      title: '',
+      subtitle: '',
+      description: '',
+      speaker_name: '',
+      speaker_title: '',
+      speaker_avatar_url: '',
+      price: 49,
+      currency: 'GEL',
+      scheduled_at: nextWeek.toISOString().slice(0, 16),
+      duration_minutes: 90,
+      stream_url: '',
+      is_live: false,
+      is_completed: false,
+      learning_points: []
+    });
+    setLearningPointsInput('');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (item: Masterclass) => {
+    const dt = new Date(item.scheduled_at);
+    const localIso = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+    setEditingItem({
+      ...item,
+      scheduled_at: localIso
+    });
+    setLearningPointsInput(item.learning_points ? item.learning_points.join('\n') : '');
+    setIsModalOpen(true);
+  };
+
+  const handleSaveMasterclass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem?.title || !editingItem?.speaker_name) {
+      alert('სათაური და სპიკერის სახელი სავალდებულოა');
+      return;
+    }
+
+    setSaveLoading(true);
+
+    try {
+      const pointsArray = learningPointsInput
+        .split('\n')
+        .map((p: string) => p.trim())
+        .filter((p: string) => Boolean(p));
+
+      const payload = {
+        title: editingItem.title.trim(),
+        subtitle: editingItem.subtitle?.trim() || '',
+        description: editingItem.description?.trim() || '',
+        speaker_name: editingItem.speaker_name.trim(),
+        speaker_title: editingItem.speaker_title?.trim() || '',
+        speaker_avatar_url: editingItem.speaker_avatar_url?.trim() || '',
+        price: Number(editingItem.price) || 49,
+        currency: 'GEL',
+        scheduled_at: new Date(editingItem.scheduled_at || Date.now()).toISOString(),
+        duration_minutes: Number(editingItem.duration_minutes) || 90,
+        stream_url: editingItem.stream_url?.trim() || '',
+        is_live: Boolean(editingItem.is_live),
+        is_completed: Boolean(editingItem.is_completed),
+        learning_points: pointsArray
+      };
+
+      if (editingItem.id && !editingItem.id.startsWith('drg-') && !editingItem.id.startsWith('medical-')) {
+        const { error } = await supabase
+          .from('masterclasses')
+          .update(payload)
+          .eq('id', editingItem.id);
+
+        if (error) throw error;
+
+        setMasterclasses((prev: Masterclass[]) =>
+          prev.map((m: Masterclass) => (m.id === editingItem.id ? { ...m, ...payload } : m))
+        );
+      } else {
+        const { data, error } = await supabase
+          .from('masterclasses')
+          .insert(payload)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setMasterclasses((prev: Masterclass[]) => [data, ...prev]);
+        }
+      }
+
+      setIsModalOpen(false);
+    } catch (err: any) {
+      console.error(err);
+      const fallbackId = editingItem.id || 'mc-' + Date.now();
+      const pointsArray = learningPointsInput.split('\n').filter((p: string) => Boolean(p.trim()));
+      const updatedLocal: Masterclass = {
+        id: fallbackId,
+        title: editingItem.title || '',
+        subtitle: editingItem.subtitle || '',
+        description: editingItem.description || '',
+        speaker_name: editingItem.speaker_name || '',
+        speaker_title: editingItem.speaker_title || '',
+        speaker_avatar_url: editingItem.speaker_avatar_url,
+        price: Number(editingItem.price) || 49,
+        currency: 'GEL',
+        scheduled_at: new Date(editingItem.scheduled_at || Date.now()).toISOString(),
+        duration_minutes: Number(editingItem.duration_minutes) || 90,
+        stream_url: editingItem.stream_url,
+        is_live: Boolean(editingItem.is_live),
+        is_completed: Boolean(editingItem.is_completed),
+        learning_points: pointsArray
+      };
+
+      setMasterclasses((prev: Masterclass[]) => {
+        const exists = prev.some((m: Masterclass) => m.id === fallbackId);
+        if (exists) {
+          return prev.map((m: Masterclass) => (m.id === fallbackId ? updatedLocal : m));
+        }
+        return [updatedLocal, ...prev];
+      });
+
+      setIsModalOpen(false);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleDeleteMasterclass = async (item: Masterclass) => {
+    if (!window.confirm(`დარწმუნებული ხართ, რომ გსურთ მასტერკლასის წაშლა: "${item.title}"?`)) {
+      return;
+    }
+
+    try {
+      await supabase.from('masterclasses').delete().eq('id', item.id);
+      setMasterclasses((prev: Masterclass[]) => prev.filter((m: Masterclass) => m.id !== item.id));
+    } catch (err) {
+      console.error(err);
+      setMasterclasses((prev: Masterclass[]) => prev.filter((m: Masterclass) => m.id !== item.id));
+    }
+  };
+
   const filtered = masterclasses.filter((m: Masterclass) => {
     if (activeTab === 'upcoming') return !m.is_completed;
     if (activeTab === 'archive') return m.is_completed;
@@ -113,9 +295,18 @@ export default function MasterclassesPage() {
     <div className="space-y-10 pb-12">
       <div className="relative overflow-hidden rounded-3xl bg-slate-900 dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 p-8 sm:p-12 text-white shadow-xl">
         <div className="relative z-10 max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            პროფესიული განათლება & მასტერკლასები
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5" />
+              პროფესიული განათლება & მასტერკლასები
+            </div>
+
+            {isAdmin && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-bold">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                ადმინ-რეჟიმი აქტიურია
+              </span>
+            )}
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
@@ -129,7 +320,7 @@ export default function MasterclassesPage() {
           <div className="pt-2 flex flex-wrap gap-4 text-xs text-slate-300">
             <div className="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
               <Video className="w-4 h-4 text-cyan-400" />
-              ინტერაქტიული ლაივ სტრიმი
+              ინტერაქტიული ლაივ სტრიმი (Variant B)
             </div>
             <div className="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
               <Award className="w-4 h-4 text-emerald-400" />
@@ -143,150 +334,4 @@ export default function MasterclassesPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'all'
-                ? 'bg-slate-900 text-white dark:bg-cyan-500 dark:text-slate-950 shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            ყველა მასტერკლასი
-          </button>
-          <button
-            onClick={() => setActiveTab('upcoming')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'upcoming'
-                ? 'bg-slate-900 text-white dark:bg-cyan-500 dark:text-slate-950 shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            დაგეგმილი / ლაივ
-          </button>
-          <button
-            onClick={() => setActiveTab('archive')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'archive'
-                ? 'bg-slate-900 text-white dark:bg-cyan-500 dark:text-slate-950 shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            ვიდეოარქივი (VOD)
-          </button>
-        </div>
-
-        <span className="text-xs text-slate-500 font-medium hidden sm:inline">
-          სულ: {filtered.length} სესია
-        </span>
-      </div>
-
-      {loading ? (
-        <div className="p-12 text-center text-slate-400 animate-pulse text-sm">
-          მასტერკლასები იტვირთება...
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="p-12 text-center bg-white dark:bg-[#0d121f] rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 text-sm">
-          მასტერკლასები ამ კატეგორიაში ჯერ არ არის.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((item: Masterclass) => {
-            const isPast = item.is_completed;
-            const dateObj = new Date(item.scheduled_at);
-            const dateStr = dateObj.toLocaleDateString('ka-GE', {
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-
-            return (
-              <div
-                key={item.id}
-                className="bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-2xl p-6 flex flex-col justify-between shadow-xs transition-all hover:-translate-y-1 hover:shadow-md"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    {item.is_live ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20 animate-pulse">
-                        <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                        LIVE ახლა
-                      </span>
-                    ) : isPast ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                        <PlayCircle className="w-3.5 h-3.5" />
-                        ჩანაწერი ხელმისაწვდომია
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {dateStr}
-                      </span>
-                    )}
-
-                    <div className="flex items-center gap-1 text-slate-900 dark:text-white font-extrabold text-base">
-                      <Tag className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-                      <span>{item.price} {item.currency}</span>
-                    </div>
-                  </div>
-
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 mb-2">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-4">
-                    {item.subtitle || item.description}
-                  </p>
-
-                  {item.learning_points && item.learning_points.length > 0 && (
-                    <div className="space-y-1.5 mb-5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                      {item.learning_points.slice(0, 2).map((point: string, idx: number) => (
-                        <div key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-cyan-500 shrink-0 mt-0.5" />
-                          <span className="line-clamp-1">{point}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800/80 mb-5">
-                    {item.speaker_avatar_url ? (
-                      <img
-                        src={item.speaker_avatar_url}
-                        alt={item.speaker_name}
-                        className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-sm flex items-center justify-center">
-                        {item.speaker_name.charAt(0)}
-                      </div>
-                    )}
-                    <div className="text-xs min-w-0">
-                      <div className="font-bold text-slate-900 dark:text-slate-100 truncate">
-                        {item.speaker_name}
-                      </div>
-                      <div className="text-[11px] text-slate-500 truncate">
-                        {item.speaker_title}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={`/masterclasses/${item.id}`}
-                    className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 font-semibold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2"
-                  >
-                    <span>{isPast ? 'ჩანაწერის ნახვა' : 'დეტალები & რეგისტრაცია'}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
