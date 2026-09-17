@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import EditableText from '@/components/EditableText';
 import { 
   LogIn, 
   UserPlus, 
@@ -21,9 +20,107 @@ import {
   Trash2,
   X,
   Save,
-  ShieldCheck
+  ShieldCheck,
+  Check
 } from 'lucide-react';
 
+// ==========================================
+// 1. INLINE EDITABLE TEXT COMPONENT (CMS)
+// ==========================================
+interface EditableTextProps {
+  contentKey: string;
+  defaultText: string;
+  isAdmin?: boolean;
+  className?: string;
+  as?: 'h1' | 'h2' | 'h3' | 'p' | 'span' | 'div';
+}
+
+function EditableText({
+  contentKey,
+  defaultText,
+  isAdmin = false,
+  className = '',
+  as: Component = 'span'
+}: EditableTextProps) {
+  const [text, setText] = useState(defaultText);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(defaultText);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`site_text_${contentKey}`);
+      if (saved) {
+        setText(saved);
+        setDraft(saved);
+      }
+    }
+  }, [contentKey]);
+
+  const handleSave = () => {
+    setText(draft);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`site_text_${contentKey}`, draft);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setDraft(text);
+    setIsEditing(false);
+  };
+
+  if (!isAdmin) {
+    return <Component className={className}>{text}</Component>;
+  }
+
+  if (isEditing) {
+    return (
+      <span className="inline-flex items-center gap-1.5 p-1 bg-white dark:bg-slate-900 border border-cyan-500 rounded-lg shadow-sm">
+        <input
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          className="px-2 py-0.5 text-xs bg-transparent border-b border-cyan-500 text-slate-900 dark:text-white focus:outline-none"
+          autoFocus
+        />
+        <button
+          type="button"
+          onClick={handleSave}
+          className="p-1 text-emerald-500 hover:bg-emerald-500/10 rounded cursor-pointer"
+          title="შენახვა"
+        >
+          <Check className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={handleCancel}
+          className="p-1 text-slate-400 hover:bg-slate-500/10 rounded cursor-pointer"
+          title="გაუქმება"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <span className="group/edit inline-flex items-center gap-1.5">
+      <Component className={className}>{text}</Component>
+      <button
+        type="button"
+        onClick={() => setIsEditing(true)}
+        className="opacity-0 group-hover/edit:opacity-100 p-1 text-cyan-500 hover:bg-cyan-500/10 rounded transition-opacity cursor-pointer"
+        title="ტექსტის შეცვლა"
+      >
+        <Edit2 className="w-3.5 h-3.5" />
+      </button>
+    </span>
+  );
+}
+
+// ==========================================
+// 2. MAIN HOMEPAGE COMPONENT
+// ==========================================
 interface EditModalState {
   isOpen: boolean;
   type: 'discussion' | 'blog';
@@ -41,7 +138,7 @@ export default function HomePage() {
   const [topBlogs, setTopBlogs] = useState<any[]>([]);
   const [loadingFeed, setLoadingFeed] = useState(true);
 
-  // Auth states (თუ მომხმარებელი არ არის შესული)
+  // Auth states
   const [isLogin, setIsLogin] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -245,7 +342,6 @@ export default function HomePage() {
 
       if (error) throw error;
 
-      // Update in-place local state
       if (editModal.type === 'discussion') {
         setTopDiscussions((prev) =>
           prev.map((d) => (d.id === editModal.item.id ? { ...d, title: modalTitle, content: modalContent } : d))
@@ -298,7 +394,7 @@ export default function HomePage() {
   }
 
   // ==========================================
-  // VIEW 1: AUTH VIEW (თუ მომხმარებელი არ არის შესული)
+  // VIEW 1: AUTH VIEW (არაავტორიზებული რეჟიმი)
   // ==========================================
   if (!user) {
     return (
@@ -496,7 +592,6 @@ export default function HomePage() {
                         <span className="text-slate-500 dark:text-slate-400">{item.author?.profession || 'ჯანდაცვა'}</span>
                       </div>
 
-                      {/* ADMIN QUICK CONTROLS FOR CARDS */}
                       {isAdmin && (
                         <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/90 px-1.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
                           <button
@@ -597,7 +692,6 @@ export default function HomePage() {
                         <span className="text-slate-500 dark:text-slate-400">{item.author?.profession || 'სპეციალისტი'}</span>
                       </div>
 
-                      {/* ADMIN QUICK CONTROLS FOR CARDS */}
                       {isAdmin && (
                         <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/90 px-1.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
                           <button
