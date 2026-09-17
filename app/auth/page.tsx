@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { 
   Lock, 
@@ -21,7 +20,6 @@ export default function AuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
 
-  // Input states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -29,115 +27,101 @@ export default function AuthPage() {
   const [workplace, setWorkplace] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Status states
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // OAuth Login (Google / LinkedIn)
   const handleOAuthLogin = async (provider: 'google' | 'linkedin_oidc') => {
     setSocialLoading(provider);
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
-        },
-      });
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
+      },
+    });
 
-      if (error) {
-        setErrorMsg(error.message);
-        setSocialLoading(null);
-      }
-    } catch (err: any) {
-      setErrorMsg('ავტორიზაციის შეცდომა: ' + (err.message || 'სცადეთ მოგვიანებით'));
+    if (error) {
+      setErrorMsg(error.message);
       setSocialLoading(null);
     }
   };
 
-  // Email / Password Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
     setLoading(true);
 
-    try {
-      if (mode === 'signin') {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
+    if (mode === 'signin') {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            setErrorMsg('ელ-ფოსტა ან პაროლი არასწორია.');
-          } else {
-            setErrorMsg(error.message);
-          }
-        } else {
+      if (error) {
+        setErrorMsg(error.message.includes('Invalid login') ? 'ელ-ფოსტა ან პაროლი არასწორია.' : error.message);
+        setLoading(false);
+      } else {
+        router.push('/');
+        router.refresh();
+      }
+    } else if (mode === 'signup') {
+      if (!fullName.trim()) {
+        setErrorMsg('გთხოვთ მიუთითოთ სახელი და გვარი.');
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            profession: profession.trim(),
+            workplace: workplace.trim(),
+          },
+        },
+      });
+
+      if (error) {
+        setErrorMsg(error.message);
+        setLoading(false);
+      } else if (data?.user) {
+        try {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            full_name: fullName.trim(),
+            profession: profession.trim(),
+            workplace: workplace.trim(),
+            updated_at: new Date().toISOString(),
+          });
+        } catch (err) {
+          console.error(err);
+        }
+
+        if (data.session) {
           router.push('/');
           router.refresh();
-        }
-      } else if (mode === 'signup') {
-        if (!fullName.trim()) {
-          setErrorMsg('გთხოვთ მიუთითოთ თქვენი სახელი და გვარი.');
-          setLoading(false);
-          return;
-        }
-
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            data: {
-              full_name: fullName.trim(),
-              profession: profession.trim(),
-              workplace: workplace.trim(),
-            },
-          },
-        });
-
-        if (error) {
-          setErrorMsg(error.message);
-        } else if (data?.user) {
-          try {
-            await supabase.from('profiles').upsert({
-              id: data.user.id,
-              full_name: fullName.trim(),
-              profession: profession.trim(),
-              workplace: workplace.trim(),
-              updated_at: new Date().toISOString(),
-            });
-          } catch (e) {
-            console.error('Profile upsert note:', e);
-          }
-
-          if (data.session) {
-            router.push('/');
-            router.refresh();
-          } else {
-            setSuccessMsg('რეგისტრაცია წარმატებულია! გთხოვთ შეამოწმოთ თქვენი ელ-ფოსტა და დაადასტუროთ ანგარიში.');
-          }
-        }
-      } else if (mode === 'forgot') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/profile` : undefined,
-        });
-
-        if (error) {
-          setErrorMsg(error.message);
         } else {
-          setSuccessMsg('პაროლის აღდგენის ბმული გაგზავნილია თქვენს ელ-ფოსტაზე!');
+          setSuccessMsg('რეგისტრაცია წარმატებულია! შეამოწმეთ ელ-ფოსტა ანგარიშის დასადასტურებლად.');
+          setLoading(false);
         }
       }
-    } catch (err: any) {
-      setErrorMsg('შეცდომა: ' + (err.message || 'სცადეთ თავიდან'));
-    } finally {
+    } else if (mode === 'forgot') {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/profile` : undefined,
+      });
+
+      if (error) {
+        setErrorMsg(error.message);
+      } else {
+        setSuccessMsg('აღდგენის ბმული გაგზავნილია თქვენს ელ-ფოსტაზე!');
+      }
       setLoading(false);
     }
   };
@@ -145,8 +129,6 @@ export default function AuthPage() {
   return (
     <div className="min-h-[calc(100vh-160px)] flex items-center justify-center p-4 sm:p-6">
       <div className="relative w-full max-w-md bg-white dark:bg-navy-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-7 sm:p-9 shadow-2xl space-y-6">
-        
-        {/* Header Branding */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 via-teal-500 to-amber-400 p-[2px] shadow-lg shadow-cyan-500/20 mb-1">
             <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center font-black text-xl text-transparent bg-clip-text bg-gradient-to-tr from-cyan-400 to-amber-300">
@@ -167,7 +149,6 @@ export default function AuthPage() {
           </p>
         </div>
 
-        {/* Feedback Messages */}
         {errorMsg && (
           <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-2 animate-in fade-in duration-150">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -182,10 +163,8 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* One-Click Social Logins (Google & LinkedIn) */}
         {mode !== 'forgot' && (
           <div className="space-y-2.5">
-            {/* Google Button */}
             <button
               type="button"
               onClick={() => handleOAuthLogin('google')}
@@ -205,7 +184,6 @@ export default function AuthPage() {
               <span>Google-ით შესვლა</span>
             </button>
 
-            {/* LinkedIn Button */}
             <button
               type="button"
               onClick={() => handleOAuthLogin('linkedin_oidc')}
@@ -231,4 +209,191 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* Email &
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          {mode === 'signup' && (
+            <>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  სრული სახელი და გვარი
+                </label>
+                <div className="relative">
+                  <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="დავით შოვნაძე"
+                    required
+                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  სპეციალობა / აკადემიური პოზიცია
+                </label>
+                <div className="relative">
+                  <GraduationCap className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={profession}
+                    onChange={(e) => setProfession(e.target.value)}
+                    placeholder="მაგ. ჯანდაცვის მენეჯერი / მკვლევარი"
+                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  ორგანიზაცია / უნივერსიტეტი
+                </label>
+                <div className="relative">
+                  <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={workplace}
+                    onChange={(e) => setWorkplace(e.target.value)}
+                    placeholder="მაგ. კავკასიის უნივერსიტეტი"
+                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white transition-all"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              ელ-ფოსტა
+            </label>
+            <div className="relative">
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="სახელი@ორგანიზაცია.ge"
+                required
+                className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white transition-all"
+              />
+            </div>
+          </div>
+
+          {mode !== 'forgot' && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  პაროლი
+                </label>
+                {mode === 'signin' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('forgot');
+                      setErrorMsg(null);
+                      setSuccessMsg(null);
+                    }}
+                    className="text-[11px] text-cyan-600 dark:text-cyan-400 font-bold hover:underline cursor-pointer"
+                  >
+                    დაგავიწყდათ პაროლი?
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="მინიმუმ 6 სიმბოლო"
+                  required
+                  className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || !!socialLoading}
+            className="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-teal-500 hover:opacity-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg shadow-cyan-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <span>
+                  {mode === 'signin' && 'შესვლა'}
+                  {mode === 'signup' && 'რეგისტრაცია'}
+                  {mode === 'forgot' && 'აღდგენის ბმულის გაგზავნა'}
+                </span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </form>
+
+        <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100 dark:border-slate-800">
+          {mode === 'signin' && (
+            <p>
+              ჯერ არ გაქვთ პროფილი?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('signup');
+                  setErrorMsg(null);
+                  setSuccessMsg(null);
+                }}
+                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
+              >
+                დარეგისტრირდით
+              </button>
+            </p>
+          )}
+
+          {mode === 'signup' && (
+            <p>
+              უკვე დარეგისტრირებული ხართ?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('signin');
+                  setErrorMsg(null);
+                  setSuccessMsg(null);
+                }}
+                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
+              >
+                შედით სისტემაში
+              </button>
+            </p>
+          )}
+
+          {mode === 'forgot' && (
+            <p>
+              გაიხსენეთ პაროლი?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('signin');
+                  setErrorMsg(null);
+                  setSuccessMsg(null);
+                }}
+                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
+              >
+                უკან შესვლაზე
+              </button>
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
