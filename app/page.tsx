@@ -472,4 +472,127 @@ export default function HomePage() {
                 იტვირთება...
               </div>
             ) : topDiscussions.length === 0 ? (
-              <div className="p-8 text-center bg-white dark
+              <div className="p-8 text-center bg-white dark:bg-[#0d121f] rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 text-xs">
+                დისკუსიები ჯერ არ არის. იყავით პირველი, ვინც წამოიწყებს თემას!
+              </div>
+            ) : (
+              topDiscussions.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/discussions/${item.id}`}
+                  className="block p-5 bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-600 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs group"
+                >
+                  <div className="flex items-center gap-2 mb-2 text-xs">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {item.author?.full_name || 'მომხმარებელი'}
+                    </span>
+                    {item.author?.verified_badge && (
+                      <CheckCircle className="w-3.5 h-3.5 text-indigo-500" />
+                    )}
+                    <span className="text-slate-400">•</span>
+                    <span className="text-slate-500 dark:text-slate-400">{item.author?.profession || 'ჯანდაცვა'}</span>
+                  </div>
+
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 mb-2">
+                    {item.title}
+                  </h3>
+
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    {item.topics?.map((topic) => (
+                      <span
+                        key={topic}
+                        className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+
+                    {item.is_policy_brief && (
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50 flex items-center gap-1">
+                        <FileText className="w-3 h-3" /> Policy Brief
+                      </span>
+                    )}
+
+                    {item.seeking_collaborators && (
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-1">
+                        <Users className="w-3 h-3" /> თანამშრომლობა
+                      </span>
+                    )}
+
+                    <div className="ml-auto text-xs text-slate-400 flex items-center gap-1 font-medium">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {(item.comments && item.comments[0] ? item.comments[0].count : 0)} პასუხი
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* სვეტი 2: ტოპ-5 ბლოგ-პოსტი & ანალიტიკა */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                ტოპ-5 ბლოგ-პოსტი & ანალიტიკა
+              </h2>
+            </div>
+            <Link
+              href="/blog"
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+            >
+              ყველა ბლოგი <ArrowRight className="w400 hover:underline flex items-center gap-1"
+            >
+              ყველა ბლოგი <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="space-y-3">
+            {loadingFeed ? (
+              <div className="p-8 text-center text-slate-400 text-xs animate-pulse">
+                იტვირთება...
+              </div>
+            ) : topBlogs.length === 0 ? (
+              <div className="p-8 text-center bg-white dark:bg-[#0d121f] rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 text-xs">
+                ბლოგ-სტატიები ჯერ არ არის. გაუზიარეთ თქვენი ანალიტიკური სტატია კოლეგებს!
+              </div>
+            ) : (
+              topBlogs.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/blog/${item.id}`}
+                  className="block p-5 bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-600 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs group"
+                >
+                  <div className="flex items-center gap-2 mb-2 text-xs">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {item.author?.full_name || 'ავტორი'}
+                    </span>
+                    <span className="text-slate-400">•</span>
+                    <span className="text-slate-500 dark:text-slate-400">{item.author?.profession || 'სპეციალისტი'}</span>
+                  </div>
+
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors line-clamp-2 mb-2">
+                    {item.title}
+                  </h3>
+
+                  <div className="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    <span>{new Date(item.created_at).toLocaleDateString('ka-GE')}</span>
+                    <div className="flex items-center gap-1 font-medium">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {(item.comments && item.comments[0] ? item.comments[0].count : 0)} კომენტარი
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </section>
+
+      </div>
+    </div>
+      )}
+    </>
+  );
+}
