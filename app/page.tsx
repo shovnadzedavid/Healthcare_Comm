@@ -478,7 +478,7 @@ export default function HomePage() {
                 დისკუსიები ჯერ არ არის. იყავით პირველი, ვინც წამოიწყებს თემას!
               </div>
             ) : (
-              topDiscussions.map((item) => (
+              topDiscussions.map((item: any) => (
                 <Link
                   key={item.id}
                   href={`/discussions/${item.id}`}
@@ -500,7 +500,7 @@ export default function HomePage() {
                   </h3>
 
                   <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                    {item.topics?.map((topic) => (
+                    {item.topics?.map((topic: string) => (
                       <span
                         key={topic}
                         className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300"
@@ -559,7 +559,7 @@ export default function HomePage() {
                 ბლოგ-სტატიები ჯერ არ არის. გაუზიარეთ თქვენი ანალიტიკური სტატია კოლეგებს!
               </div>
             ) : (
-              topBlogs.map((item) => (
+              topBlogs.map((item: any) => (
                 <Link
                   key={item.id}
                   href={`/blog/${item.id}`}
