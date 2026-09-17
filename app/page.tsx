@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -506,7 +506,7 @@ export default function HomePage() {
                   </h3>
 
                   <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                    {item.topics?.map((topic: string) => (
+                    {item.topics?.map((topic) => (
                       <span
                         key={topic}
                         className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300"
@@ -527,13 +527,9 @@ export default function HomePage() {
                       </span>
                     )}
 
-                    <div className="ml-auto text-xs text-რომლობა
-                      </span>
-                    )}
-
                     <div className="ml-auto text-xs text-slate-400 flex items-center gap-1 font-medium">
                       <MessageSquare className="w-3.5 h-3.5" />
-                      {item.comments?.[0]?.count || 0} პასუხი
+                      {(item.comments && item.comments[0] ? item.comments[0].count : 0)} პასუხი
                     </div>
                   </div>
                 </Link>
@@ -572,8 +568,7 @@ export default function HomePage() {
               topBlogs.map((item) => (
                 <Link
                   key={item.id}
-                  href={`/blog/${item.id}`}
-                  className="block p-5 bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-600 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs group"
+                  href={`/blog/${item.id}`}\n                  className="block p-5 bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-600 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs group"
                 >
                   <div className="flex items-center gap-2 mb-2 text-xs">
                     <span className="font-semibold text-slate-900 dark:text-slate-100">
@@ -591,7 +586,7 @@ export default function HomePage() {
                     <span>{new Date(item.created_at).toLocaleDateString('ka-GE')}</span>
                     <div className="flex items-center gap-1 font-medium">
                       <MessageSquare className="w-3.5 h-3.5" />
-                      {item.comments?.[0]?.count || 0} კომენტარი
+                      {(item.comments && item.comments[0] ? item.comments[0].count : 0)} კომენტარი
                     </div>
                   </div>
                 </Link>
