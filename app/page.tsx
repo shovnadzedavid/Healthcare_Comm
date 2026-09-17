@@ -27,7 +27,7 @@ export default function HomePage() {
   const [topBlogs, setTopBlogs] = useState<any[]>([]);
   const [loadingFeed, setLoadingFeed] = useState(true);
 
-  // Auth states (თუ მომხმარებელი არ არის შესული)
+  // Auth states
   const [isLogin, setIsLogin] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -178,10 +178,9 @@ export default function HomePage() {
     );
   }
 
-  return (
-    <>
-      {!user ? (
-        <div className="min-h-[calc(100vh-140px)] flex items-center justify-center p-4">
+  if (!user) {
+    return (
+      <div className="min-h-[calc(100vh-140px)] flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 rounded-2xl p-7 sm:p-9 shadow-xl space-y-6">
           <div className="text-center space-y-2">
             <div className="w-10 h-10 mx-auto rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center font-bold text-base tracking-tighter mb-2 shadow-xs">
@@ -216,7 +215,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => handleOAuthLogin('google')}
-              disabled={!!socialLoading || authLoading}
+              disabled={Boolean(socialLoading) || authLoading}
               className="w-full py-2.5 px-4 bg-white dark:bg-[#141a29] border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-semibold rounded-xl shadow-2xs hover:shadow-xs transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -231,7 +230,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => handleOAuthLogin('linkedin_oidc')}
-              disabled={!!socialLoading || authLoading}
+              disabled={Boolean(socialLoading) || authLoading}
               className="w-full py-2.5 px-4 bg-[#0A66C2] hover:bg-[#004182] text-white text-xs sm:text-sm font-semibold rounded-xl shadow-2xs hover:shadow-xs transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
             >
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -410,9 +409,12 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-      ) : (
-        <div className="space-y-8">
-      {/* 1. Banner / Welcome (Original Structure) */}
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* 1. Banner / Welcome */}
       <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs">
         <div className="max-w-3xl space-y-2.5">
           <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
@@ -446,7 +448,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 2. Grid: Top Discussions & Top Blogs (Original Layout) */}
+      {/* 2. Grid: Top Discussions & Top Blogs */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* სვეტი 1: ტოპ-5 აქტიური დისკუსია */}
@@ -543,8 +545,6 @@ export default function HomePage() {
               href="/blog"
               className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
             >
-              ყველა ბლოგი <ArrowRight className="w400 hover:underline flex items-center gap-1"
-            >
               ყველა ბლოგი <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -592,7 +592,5 @@ export default function HomePage() {
 
       </div>
     </div>
-      )}
-    </>
   );
 }
