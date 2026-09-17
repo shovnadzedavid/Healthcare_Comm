@@ -277,4 +277,179 @@ export default function HomePage() {
       <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs">
         <div className="max-w-3xl space-y-2.5">
           <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-            პ
+            პროფესიული სივრცე
+          </span>
+
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Healthcare<span className="text-indigo-600 dark:text-indigo-400 font-medium">Comm</span>
+          </h1>
+
+          <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed">
+            დახურული ქომუნითი ჯანდაცვის პოლიტიკის, მენეჯმენტის, ეპიდემიოლოგიისა და კვლევების სპეციალისტებისთვის. გაუზიარეთ მიგნებები და ითანამშრომლეთ კოლეგებთან.
+          </p>
+
+          <div className="pt-2 flex flex-wrap gap-3">
+            <Link
+              href="/discussions/new"
+              className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 px-4 py-2 rounded-xl text-xs font-semibold shadow-xs transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              + გახსენით დისკუსია
+            </Link>
+            <Link
+              href="/blog/new"
+              className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-[#141a29] hover:bg-slate-200 dark:hover:bg-[#1a2236] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl text-xs font-semibold transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              + გამოაქვეყნეთ ბლოგი
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Grid: Top Discussions & Top Blogs */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* სვეტი 1: ტოპ-5 აქტიური დისკუსია */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                ტოპ-5 აქტიური დისკუსია
+              </h2>
+            </div>
+            <Link
+              href="/discussions"
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+            >
+              ყველა დისკუსია <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="space-y-3">
+            {loadingFeed ? (
+              <div className="p-8 text-center text-slate-400 text-xs animate-pulse">
+                იტვირთება...
+              </div>
+            ) : topDiscussions.length === 0 ? (
+              <div className="p-8 text-center bg-white dark:bg-[#0d121f] rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 text-xs">
+                დისკუსიები ჯერ არ არის. იყავით პირველი, ვინც წამოიწყებს თემას!
+              </div>
+            ) : (
+              topDiscussions.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/discussions/${item.id}`}
+                  className="block p-5 bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-600 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs group"
+                >
+                  <div className="flex items-center gap-2 mb-2 text-xs">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {item.author?.full_name || 'მომხმარებელი'}
+                    </span>
+                    {item.author?.verified_badge && (
+                      <CheckCircle className="w-3.5 h-3.5 text-indigo-500" />
+                    )}
+                    <span className="text-slate-400">•</span>
+                    <span className="text-slate-500 dark:text-slate-400">{item.author?.profession || 'ჯანდაცვა'}</span>
+                  </div>
+
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 mb-2">
+                    {item.title}
+                  </h3>
+
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    {item.topics?.map((topic: string) => (
+                      <span
+                        key={topic}
+                        className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+
+                    {item.is_policy_brief && (
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50 flex items-center gap-1">
+                        <FileText className="w-3 h-3" /> Policy Brief
+                      </span>
+                    )}
+
+                    {item.seeking_collaborators && (
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 flex items-center gap-1">
+                        <Users className="w-3 h-3" /> თანამშრომლობა
+                      </span>
+                    )}
+
+                    <div className="ml-auto text-xs text-slate-400 flex items-center gap-1 font-medium">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {(item.comments && item.comments[0] ? item.comments[0].count : 0)} პასუხი
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* სვეტი 2: ტოპ-5 ბლოგ-პოსტი & ანალიტიკა */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                ტოპ-5 ბლოგ-პოსტი & ანალიტიკა
+              </h2>
+            </div>
+            <Link
+              href="/blog"
+              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+            >
+              ყველა ბლოგი <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="space-y-3">
+            {loadingFeed ? (
+              <div className="p-8 text-center text-slate-400 text-xs animate-pulse">
+                იტვირთება...
+              </div>
+            ) : topBlogs.length === 0 ? (
+              <div className="p-8 text-center bg-white dark:bg-[#0d121f] rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 text-xs">
+                ბლოგ-სტატიები ჯერ არ არის. გაუზიარეთ თქვენი ანალიტიკური სტატია კოლეგებს!
+              </div>
+            ) : (
+              topBlogs.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/blog/${item.id}`}
+                  className="block p-5 bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-600 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs group"
+                >
+                  <div className="flex items-center gap-2 mb-2 text-xs">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {item.author?.full_name || 'ავტორი'}
+                    </span>
+                    <span className="text-slate-400">•</span>
+                    <span className="text-slate-500 dark:text-slate-400">{item.author?.profession || 'სპეციალისტი'}</span>
+                  </div>
+
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors line-clamp-2 mb-2">
+                    {item.title}
+                  </h3>
+
+                  <div className="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    <span>{new Date(item.created_at).toLocaleDateString('ka-GE')}</span>
+                    <div className="flex items-center gap-1 font-medium">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {(item.comments && item.comments[0] ? item.comments[0].count : 0)} კომენტარი
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </section>
+
+      </div>
+    </div>
+  );
+}
