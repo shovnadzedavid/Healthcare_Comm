@@ -4,6 +4,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
+  Home, 
+  MessageSquare, 
+  BookOpen, 
+  Send, 
   LogOut, 
   LogIn, 
   Moon, 
@@ -75,10 +79,10 @@ export default function Navbar() {
   };
 
   const navItems = [
-    { name: 'მთავარი', href: '/' },
-    { name: 'დისკუსიები', href: '/discussions' },
-    { name: 'პუბლიკაციები', href: '/blog' },
-    { name: 'შეტყობინებები', href: '/messages' },
+    { name: 'მთავარი', href: '/', icon: Home },
+    { name: 'დისკუსიები', href: '/discussions', icon: MessageSquare },
+    { name: 'ბლოგი', href: '/blog', icon: BookOpen },
+    { name: 'ჩატი', href: '/messages', icon: Send },
   ];
 
   return (
@@ -102,20 +106,22 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Navigation Links */}
+          {/* Navigation Links (მთავარი, დისკუსიები, ბლოგი, ჩატი) */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
+              const Icon = item.icon;
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
                     isActive
                       ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >
+                  <Icon className="w-3.5 h-3.5" />
                   {item.name}
                 </Link>
               );
