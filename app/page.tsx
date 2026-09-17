@@ -8,19 +8,18 @@ import {
   UserPlus, 
   AlertCircle, 
   CheckCircle2, 
-  Sparkles, 
-  ArrowRight, 
+  ArrowUpRight, 
   MessageSquare, 
   Plus, 
-  CheckCircle
+  ShieldCheck
 } from 'lucide-react';
 
 const FILTER_TOPICS = [
-  { id: 'ყველა', label: '⚡ ყველა თემა' },
-  { id: 'ჯანდაცვის მენეჯმენტი', label: '🏥 DRG & კლინიკური მართვა' },
-  { id: 'საზოგადოებრივი ჯანდაცვა', label: '🧬 NCDs & პრევენცია' },
-  { id: 'ჯანდაცვის პოლიტიკა', label: '📊 ჯანდაცვის ეკონომიკა' },
-  { id: 'კვლევა', label: '🤝 კოლაბორაციები' },
+  { id: 'ყველა', label: 'ყველა მიმართულება' },
+  { id: 'ჯანდაცვის მენეჯმენტი', label: 'კლინიკური მენეჯმენტი და DRG' },
+  { id: 'საზოგადოებრივი ჯანდაცვა', label: 'საზოგადოებრივი ჯანდაცვა' },
+  { id: 'ჯანდაცვის პოლიტიკა', label: 'ჯანდაცვის პოლიტიკა და ეკონომიკა' },
+  { id: 'კვლევა', label: 'სამეცნიერო თანამშრომლობა' },
 ];
 
 export default function HomePage() {
@@ -29,12 +28,12 @@ export default function HomePage() {
   const [profile, setProfile] = useState<any>(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
-  // Feed states (შესული მომხმარებლისთვის)
+  // Feed states
   const [discussions, setDiscussions] = useState<any[]>([]);
   const [selectedTopic, setSelectedTopic] = useState('ყველა');
   const [loadingFeed, setLoadingFeed] = useState(false);
 
-  // Auth states (არაავტორიზებული მომხმარებლისთვის)
+  // Auth states
   const [isLogin, setIsLogin] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -178,58 +177,53 @@ export default function HomePage() {
   if (loadingUser) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="flex items-center gap-2 text-indigo-500 font-bold text-sm animate-pulse">
-          <Sparkles className="w-5 h-5" />
-          HealthcareComm იტვირთება...
+        <div className="text-slate-500 dark:text-slate-400 font-medium text-xs tracking-wider animate-pulse">
+          მონაცემები იტვირთება...
         </div>
       </div>
     );
   }
 
-  // 1. თუ მომხმარებელი არ არის შესული: ლამაზი მინისებური ავტორიზაცია
+  // 1. არაავტორიზებული მომხმარებლისთვის: სუფთა პროფესიული ავტორიზაცია
   if (!user) {
     return (
-      <div className="relative min-h-[calc(100vh-140px)] flex items-center justify-center p-4">
-        <div className="absolute top-1/4 -left-20 w-72 h-72 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-purple-500/15 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="relative w-full max-w-md bg-white/90 dark:bg-[#121626]/90 border border-slate-200/90 dark:border-indigo-500/20 rounded-3xl p-7 sm:p-9 shadow-2xl backdrop-blur-xl space-y-6">
+      <div className="min-h-[calc(100vh-140px)] flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 rounded-2xl p-7 sm:p-9 shadow-xl space-y-6">
           <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-400 p-[2px] shadow-lg shadow-indigo-500/25 mb-1">
-              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center font-black text-lg text-transparent bg-clip-text bg-gradient-to-tr from-indigo-300 via-purple-200 to-cyan-300">
-                H+
-              </div>
+            <div className="w-10 h-10 mx-auto rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center font-bold text-base tracking-tighter mb-2 shadow-xs">
+              HC
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Healthcare<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-400">Comm</span>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Healthcare<span className="text-indigo-600 dark:text-indigo-400 font-medium">Comm</span>
             </h1>
 
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
-              დახურული სივრცე ჯანდაცვის სფეროს სპეციალისტებისთვის
+              ჯანდაცვის პოლიტიკისა და მენეჯმენტის დახურული პროფესიული სივრცე
             </p>
           </div>
 
           {errorMsg && (
-            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 text-xs font-medium flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 text-xs font-medium flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{successMsg}</span>
             </div>
           )}
 
+          {/* Social Buttons */}
           <div className="space-y-2.5">
             <button
               type="button"
               onClick={() => handleOAuthLogin('google')}
               disabled={!!socialLoading || authLoading}
-              className="w-full py-2.5 px-4 bg-white dark:bg-[#1a2035] border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-indigo-500/40 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
+              className="w-full py-2.5 px-4 bg-white dark:bg-[#141a29] border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-semibold rounded-xl shadow-2xs hover:shadow-xs transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
@@ -237,25 +231,25 @@ export default function HomePage() {
                 <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
                 <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
               </svg>
-              <span>{socialLoading === 'google' ? 'გადამისამართება Google-ზე...' : 'Google-ით ავტორიზაცია'}</span>
+              <span>{socialLoading === 'google' ? 'მიმდინარეობს ავტორიზაცია...' : 'Google-ით ავტორიზაცია'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleOAuthLogin('linkedin_oidc')}
               disabled={!!socialLoading || authLoading}
-              className="w-full py-2.5 px-4 bg-[#0A66C2] hover:bg-[#004182] text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
+              className="w-full py-2.5 px-4 bg-[#0A66C2] hover:bg-[#004182] text-white text-xs sm:text-sm font-semibold rounded-xl shadow-2xs hover:shadow-xs transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
             >
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                 <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.63 1.63 0 1 0 0-3.25 1.63 1.63 0 0 0 0 3.25m1.39 9.74V9.95H5.07v8.55h2.78z" />
               </svg>
-              <span>{socialLoading === 'linkedin_oidc' ? 'გადამისამართება LinkedIn-ზე...' : 'LinkedIn-ით ავტორიზაცია'}</span>
+              <span>{socialLoading === 'linkedin_oidc' ? 'მიმდინარეობს ავტორიზაცია...' : 'LinkedIn-ით ავტორიზაცია'}</span>
             </button>
 
             <div className="relative flex items-center justify-center my-3">
               <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
-              <span className="absolute bg-white dark:bg-[#121626] px-3 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-                ან ელ-ფოსტით
+              <span className="absolute bg-white dark:bg-[#0d121f] px-3 text-[11px] text-slate-400 font-medium">
+                ან ელექტრონული ფოსტით
               </span>
             </div>
           </div>
@@ -264,7 +258,7 @@ export default function HomePage() {
             {!isLogin && (
               <>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     სახელი და გვარი *
                   </label>
                   <input
@@ -273,13 +267,13 @@ export default function HomePage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="მაგ. გიორგი ბერიძე"
-                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#181e35] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-white"
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#141a29] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400 text-slate-900 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    მომხმარებლის სახელი (USERNAME) *
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    მომხმარებლის სახელი (Username) *
                   </label>
                   <input
                     type="text"
@@ -287,31 +281,31 @@ export default function HomePage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="giorgi_beridze"
-                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#181e35] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-white"
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#141a29] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400 text-slate-900 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    დაბადების თარიღი (კალენდარი) *
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    დაბადების თარიღი *
                   </label>
                   <input
                     type="date"
                     required
                     value={birthDate}
                     onChange={(e) => setBirthDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#181e35] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-white"
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#141a29] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400 text-slate-900 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     მიმართულება / სპეციალობა *
                   </label>
                   <select
                     value={profession}
                     onChange={(e) => setProfession(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#181e35] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-white"
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#141a29] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400 text-slate-900 dark:text-white"
                   >
                     <option value="საზოგადოებრივი ჯანდაცვა">საზოგადოებრივი ჯანდაცვა</option>
                     <option value="ჯანდაცვის პოლიტიკა">ჯანდაცვის პოლიტიკა</option>
@@ -322,22 +316,22 @@ export default function HomePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     სამუშაო ადგილი / ორგანიზაცია
                   </label>
                   <input
                     type="text"
                     value={workplace}
                     onChange={(e) => setWorkplace(e.target.value)}
-                    placeholder="მაგ. უნივერსიტეტი, კვლევითი ცენტრი"
-                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#181e35] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-white"
+                    placeholder="მაგ. უნივერსიტეტი, კლინიკა, კვლევითი ცენტრი"
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#141a29] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400 text-slate-900 dark:text-white"
                   />
                 </div>
               </>
             )}
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 ელ-ფოსტა *
               </label>
               <input
@@ -346,12 +340,12 @@ export default function HomePage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="example@health.ge"
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#181e35] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-white"
+                className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#141a29] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400 text-slate-900 dark:text-white"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 პაროლი *
               </label>
               <input
@@ -360,13 +354,13 @@ export default function HomePage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#181e35] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-white"
+                className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#141a29] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400 text-slate-900 dark:text-white"
               />
             </div>
 
             {!isLogin && (
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   პაროლის დადასტურება *
                 </label>
                 <input
@@ -375,7 +369,7 @@ export default function HomePage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#181e35] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-white"
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-[#141a29] border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-600 dark:focus:border-indigo-400 text-slate-900 dark:text-white"
                 />
               </div>
             )}
@@ -383,14 +377,14 @@ export default function HomePage() {
             <button
               type="submit"
               disabled={authLoading}
-              className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:opacity-95 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-indigo-500/25 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full mt-2 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 font-semibold text-xs sm:text-sm shadow-xs transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {authLoading ? (
-                <span className="animate-pulse">მუშავდება...</span>
+                <span className="animate-pulse">მიმდინარეობს დამუშავება...</span>
               ) : isLogin ? (
                 <>
                   <LogIn className="w-4 h-4" />
-                  შესვლა პლატფორმაზე
+                  შესვლა
                 </>
               ) : (
                 <>
@@ -406,17 +400,17 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => { setIsLogin(false); setErrorMsg(''); setSuccessMsg(''); }}
-                className="text-xs text-slate-500 hover:text-indigo-400 transition-colors cursor-pointer"
+                className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
               >
-                არ გაქვთ ანგარიში? <span className="font-bold text-indigo-500 dark:text-indigo-400">გაიარეთ რეგისტრაცია</span>
+                არ გაქვთ ანგარიში? <span className="font-semibold text-indigo-600 dark:text-indigo-400">გაიარეთ რეგისტრაცია</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => { setIsLogin(true); setErrorMsg(''); setSuccessMsg(''); }}
-                className="text-xs text-slate-500 hover:text-indigo-400 transition-colors cursor-pointer"
+                className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
               >
-                უკვე გაქვთ ანგარიში? <span className="font-bold text-indigo-500 dark:text-indigo-400">შედით სისტემაში</span>
+                უკვე გაქვთ ანგარიში? <span className="font-semibold text-indigo-600 dark:text-indigo-400">ავტორიზაცია</span>
               </button>
             )}
           </div>
@@ -425,59 +419,56 @@ export default function HomePage() {
     );
   }
 
-  // 2. თუ მომხმარებელი შესულია: თანამედროვე ტექ-ჰაბი
+  // 2. ავტორიზებული მომხმარებლისთვის: სერიოზული და ტექნოლოგიური მთავარი პანელი
   const displayName = profile?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'კოლეგა';
 
   return (
-    <div className="space-y-7">
-      {/* Hero მისალმების ბანერი */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#161c32] via-[#101424] to-[#0c0f1c] border border-indigo-500/20 p-7 sm:p-9 shadow-xl">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="space-y-6">
+      {/* საინფორმაციო ბანერი */}
+      <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs">
+        <div className="max-w-3xl space-y-2">
+          <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+            პროფესიული პლატფორმა
+          </span>
 
-        <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            ჭკვიანი აკადემიური სივრცე
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            გამარჯობა, {displayName} 👋 — რა ხდება დღეს ჯანდაცვის პოლიტიკაში?
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+            მოგესალმებით, {displayName}
           </h1>
 
-          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
-            გააზიარეთ კვლევა, შეაფასეთ DRG ტარიფები, მოიწვიეთ კოლეგები და ჩაერთეთ საპოლიტიკო დიალოგში.
+          <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
+            ჯანდაცვის პოლიტიკისა და მართვის აკადემიური სივრცე. გაუზიარეთ კვლევითი მიგნებები კოლეგებს და ჩაერთეთ საექსპერტო დისკუსიებში.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center gap-3">
             <Link
               href="/discussions/new"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-95 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-indigo-500/25 active:scale-95 transition-all"
+              className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-xs transition-all"
             >
-              <Plus className="w-4 h-4" />
-              ახალი თემის წამოწყება
+              <Plus className="w-3.5 h-3.5" />
+              ახალი დისკუსიის დაწყება
             </Link>
             <Link
               href="/discussions"
-              className="inline-flex items-center gap-2 bg-[#1a2138] hover:bg-[#202947] text-indigo-200 border border-indigo-500/20 px-4 py-2 rounded-xl text-xs font-bold transition-all"
+              className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-[#141a29] hover:bg-slate-200 dark:hover:bg-[#1a2236] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all"
             >
-              📊 ყველა დისკუსია
+              დისკუსიების არქივი
             </Link>
           </div>
         </div>
       </div>
 
-      {/* თემატური ფილტრების ჩიპები */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      {/* ფილტრების ზოლი */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-slate-200 dark:border-slate-800/80">
         {FILTER_TOPICS.map((t) => {
           const isSelected = selectedTopic === t.id;
           return (
             <button
               key={t.id}
               onClick={() => setSelectedTopic(t.id)}
-              className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer active:scale-95 ${
+              className={`px-3.5 py-2 text-xs font-semibold transition-all whitespace-nowrap cursor-pointer border-b-2 -mb-[1px] ${
                 isSelected
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20 border border-indigo-400'
-                  : 'bg-white dark:bg-[#131728] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/40'
+                  ? 'border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400'
+                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               {t.label}
@@ -486,26 +477,25 @@ export default function HomePage() {
         })}
       </div>
 
-      {/* დისკუსიების ბარათები */}
-      <div className="space-y-4">
+      {/* დისკუსიების სია და ჰოვერ-ეფექტები */}
+      <div className="space-y-3.5">
         {loadingFeed ? (
-          <div className="py-16 text-center text-indigo-400 font-bold text-sm animate-pulse">
-            იტვირთება დისკუსიები...
+          <div className="py-16 text-center text-slate-400 font-medium text-xs animate-pulse">
+            დისკუსიები იტვირთება...
           </div>
         ) : discussions.length === 0 ? (
-          <div className="p-10 text-center rounded-3xl bg-white dark:bg-[#121626] border border-slate-200 dark:border-slate-800 text-slate-400 space-y-3">
-            <div className="text-3xl">💡</div>
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
-              ამ თემაზე დისკუსია ჯერ არ არის
+          <div className="p-10 text-center rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800 text-slate-500 space-y-2">
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              არჩეულ მიმართულებაზე დისკუსია ჯერ არ არის
             </h3>
-            <p className="text-xs text-slate-500">
-              იყავით პირველი, ვინც წამოიწყებს პროფესიულ დისკუსიას კოლეგებთან!
+            <p className="text-xs text-slate-400">
+              წამოიწყეთ პროფესიული დიალოგი კოლეგებთან.
             </p>
             <Link
               href="/discussions/new"
-              className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold mt-2"
+              className="inline-flex items-center gap-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-950 px-3.5 py-1.5 rounded-lg text-xs font-semibold mt-2"
             >
-              <Plus className="w-4 h-4" /> წამოიწყეთ პირველი თემა
+              <Plus className="w-3.5 h-3.5" /> წამოიწყეთ დისკუსია
             </Link>
           </div>
         ) : (
@@ -513,70 +503,64 @@ export default function HomePage() {
             <Link
               key={item.id}
               href={`/discussions/${item.id}`}
-              className="block p-6 rounded-3xl bg-white dark:bg-[#121626] border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/5 transition-all group"
+              className="block p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#0d121f] border border-slate-200 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-600 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm group"
             >
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-black shadow-xs">
-                    {(item.author?.full_name || 'U')[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
-                      <span>{item.author?.full_name || 'სპეციალისტი'}</span>
-                      {item.author?.verified_badge && (
-                        <CheckCircle className="w-3.5 h-3.5 text-indigo-400" />
-                      )}
-                    </div>
-                    <span className="text-[11px] text-slate-400">
-                      {item.author?.profession || 'ჯანდაცვა'} • {new Date(item.created_at).toLocaleDateString('ka-GE')}
-                    </span>
-                  </div>
+              <div className="flex items-center justify-between gap-3 mb-2.5">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {item.author?.full_name || 'სპეციალისტი'}
+                  </span>
+                  {item.author?.verified_badge && (
+                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
+                  )}
+                  <span className="text-slate-400">•</span>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    {item.author?.profession || 'ჯანდაცვა'}
+                  </span>
+                  <span className="text-slate-400">•</span>
+                  <span className="text-slate-400">
+                    {new Date(item.created_at).toLocaleDateString('ka-GE')}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
                   {item.is_policy_brief && (
-                    <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                      📑 POLICY BRIEF
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      Policy Brief
                     </span>
                   )}
                   {item.seeking_collaborators && (
-                    <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      🤝 კოლაბორაცია
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 border border-slate-200 dark:border-slate-700">
+                      თანამშრომლობა
                     </span>
                   )}
                 </div>
               </div>
 
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-400 transition-colors mb-2">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2">
                 {item.title}
               </h2>
 
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed mb-4">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed mb-3.5">
                 {item.content}
               </p>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-[#1a2035] text-slate-600 dark:text-slate-300 font-bold border border-slate-200 dark:border-slate-800">
-                    ⚡ ინსაითი
-                  </span>
-                  <span className="text-xs px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-[#1a2035] text-slate-600 dark:text-slate-300 font-bold border border-slate-200 dark:border-slate-800">
-                    🎯 ვეთანხმები
-                  </span>
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {item.topics?.map((topic: string) => (
                     <span
                       key={topic}
-                      className="text-[11px] px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-400 font-semibold"
+                      className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400"
                     >
-                      #{topic}
+                      {topic}
                     </span>
                   ))}
                 </div>
 
-                <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-400 group-hover:translate-x-0.5 transition-transform">
+                <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white font-medium transition-colors">
                   <MessageSquare className="w-3.5 h-3.5" />
-                  <span>{item.comments?.[0]?.count || 0} გამოხმაურება</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  <span>{item.comments?.[0]?.count || 0} პასუხი</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 ml-1 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </div>
               </div>
             </Link>
