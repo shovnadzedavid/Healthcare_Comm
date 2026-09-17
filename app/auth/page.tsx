@@ -182,9 +182,10 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* Social Logins */}
+        {/* One-Click Social Logins (Google & LinkedIn) */}
         {mode !== 'forgot' && (
           <div className="space-y-2.5">
+            {/* Google Button */}
             <button
               type="button"
               onClick={() => handleOAuthLogin('google')}
@@ -204,6 +205,7 @@ export default function AuthPage() {
               <span>Google-ით შესვლა</span>
             </button>
 
+            {/* LinkedIn Button */}
             <button
               type="button"
               onClick={() => handleOAuthLogin('linkedin_oidc')}
@@ -229,193 +231,4 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* Email & Password Form */}
-        <form onSubmit={handleSubmit} className="space-y-3.5">
-          {mode === 'signup' && (
-            <>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  სრული სახელი და გვარი
-                </label>
-                <div className="relative">
-                  <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="დავით შოვნაძე"
-                    required
-                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  სპეციალობა / აკადემიური პოზიცია
-                </label>
-                <div className="relative">
-                  <GraduationCap className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={profession}
-                    onChange={(e) => setProfession(e.target.value)}
-                    placeholder="მაგ. ჯანდაცვის მენეჯერი / მკვლევარი"
-                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  ორგანიზაცია / უნივერსიტეტი
-                </label>
-                <div className="relative">
-                  <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={workplace}
-                    onChange={(e) => setWorkplace(e.target.value)}
-                    placeholder="მაგ. კავკასიის უნივერსიტეტი"
-                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white transition-all"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              ელ-ფოსტა
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="სახელი@ორგანიზაცია.ge"
-                required
-                className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white transition-all"
-              />
-            </div>
-          </div>
-
-          {mode !== 'forgot' && (
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  პაროლი
-                </label>
-                {mode === 'signin' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('forgot');
-                      setErrorMsg(null);
-                      setSuccessMsg(null);
-                    }}
-                    className="text-[11px] text-cyan-600 dark:text-cyan-400 font-bold hover:underline cursor-pointer"
-                  >
-                    დაგავიწყდათ პაროლი?
-                  </button>
-                )}
-              </div>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="მინიმუმ 6 სიმბოლო"
-                  required
-                  className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-900 dark:text-white transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || !!socialLoading}
-            className="w-full py-3 px-4 bg-gradient-to-r from-cyan-600 to-teal-500 hover:opacity-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg shadow-cyan-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
-          >
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <span>
-                  {mode === 'signin' && 'შესვლა'}
-                  {mode === 'signup' && 'რეგისტრაცია'}
-                  {mode === 'forgot' && 'აღდგენის ბმულის გაგზავნა'}
-                </span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Footer Mode Switcher */}
-        <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100 dark:border-slate-800">
-          {mode === 'signin' && (
-            <p>
-              ჯერ არ გაქვთ პროფილი?{' '}
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('signup');
-                  setErrorMsg(null);
-                  setSuccessMsg(null);
-                }}
-                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
-              >
-                დარეგისტრირდით
-              </button>
-            </p>
-          )}
-
-          {mode === 'signup' && (
-            <p>
-              უკვე დარეგისტრირებული ხართ?{' '}
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('signin');
-                  setErrorMsg(null);
-                  setSuccessMsg(null);
-                }}
-                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
-              >
-                შედით სისტემაში
-              </button>
-            </p>
-          )}
-
-          {mode === 'forgot' && (
-            <p>
-              გაიხსენეთ პაროლი?{' '}
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('signin');
-                  setErrorMsg(null);
-                  setSuccessMsg(null);
-                }}
-                className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
-              >
-                უკან შესვლაზე
-              </button>
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+        {/* Email &
