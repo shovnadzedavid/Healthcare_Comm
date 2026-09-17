@@ -105,7 +105,6 @@ export default function Navbar() {
     router.refresh();
   };
 
-  // მხოლოდ 4 ძირითადი გვერდი (კოლეგების გარეშე)
   const navItems = [
     { name: 'მთავარი', href: '/', icon: Home },
     { name: 'დისკუსიები', href: '/discussions', icon: MessageSquare },
@@ -180,6 +179,7 @@ export default function Navbar() {
                       </h3>
                       {unreadCount > 0 && (
                         <button
+                          type="button"
                           onClick={markAllAsRead}
                           className="text-[11px] text-cyan-600 dark:text-cyan-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                         >
@@ -198,4 +198,64 @@ export default function Navbar() {
                           <div
                             key={n.id}
                             className={`p-3 rounded-xl transition-colors ${
-                              !n.is_read ? 'bg-cyan-500/5 font-semibold' : 'text-slate-600
+                              !n.is_read ? 'bg-cyan-500/5 font-semibold' : 'text-slate-600 dark:text-slate-400'
+                            }`}
+                          >
+                            <p className="text-xs leading-snug">{n.content}</p>
+                            <span className="text-[10px] text-slate-400 block mt-1">
+                              {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2.5 sm:p-3 rounded-2xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              title="თემის გადართვა"
+            >
+              {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
+            </button>
+
+            {user ? (
+              <>
+                <Link
+                  href="/discussions/new"
+                  className="hidden sm:inline-flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-teal-500 hover:opacity-95 text-white px-5 py-2.5 rounded-2xl text-sm font-extrabold shadow-md shadow-cyan-500/20 transition-all"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  ახალი თემა
+                </Link>
+                <Link
+                  href="/profile"
+                  className={`hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold border ${
+                    pathname === '/profile'
+                      ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10'
+                      : 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-400'
+                  }`}
+                >
+                  <UserIcon className="w-4 h-4" />
+                  პროფილი
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="p-2.5 sm:p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 rounded-2xl transition-colors cursor-pointer"
+                  title="გამოსვლა"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
