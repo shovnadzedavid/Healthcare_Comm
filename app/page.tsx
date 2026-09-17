@@ -1,549 +1,314 @@
 'use client';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { 
-  MessageSquare, 
-  BookOpen, 
-  Flame, 
-  ArrowRight, 
-  CheckCircle, 
-  Sparkles, 
-  Users, 
-  FileText,
-  Shield,
-  LogIn,
-  UserPlus,
-  AlertCircle,
-  CheckCircle2,
-  Calendar,
-  Briefcase
-} from 'lucide-react';
+import { LogIn, UserPlus, AlertCircle, CheckCircle2, Shield } from 'lucide-react';
 
 export default function HomePage() {
-  const [user, setUser] = useState<any>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const router = useRouter();
+  const [isLogin, setIsLogin] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  // Auth Gate states (when not logged in)
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
-  const [authUsername, setAuthUsername] = useState('');
-  const [authFullName, setAuthFullName] = useState('');
-  const [authBirthDate, setAuthBirthDate] = useState('');
-  const [authProfession, setAuthProfession] = useState('საზოგადოებრივი ჯანდაცვა');
-  const [authWorkplace, setAuthWorkplace] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [authSuccess, setAuthSuccess] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
+  // Form states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [profession, setProfession] = useState('საზოგადოებრივი ჯანდაცვა');
+  const [workplace, setWorkplace] = useState('');
 
-  // Feed Data (when logged in)
-  const [topDiscussions, setTopDiscussions] = useState<any[]>([]);
-  const [topBlogs, setTopBlogs] = useState<any[]>([]);
-
+  // თუ მომხმარებელი უკვე შესულია, გადაიყვანს პირდაპირ დისკუსიებზე
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      setLoadingUser(false);
-      if (data.user) {
-        fetchFeed();
+      if (data?.user) {
+        router.push('/discussions');
       }
     });
+  }, [router]);
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchFeed();
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  const fetchFeed = async () => {
-    const [discRes, blogRes] = await Promise.all([
-      supabase
-        .from('discussions')
-        .select(`
-          id,
-          title,
-          content,
-          topics,
-          is_policy_brief,
-          seeking_collaborators,
-          created_at,
-          author:profiles(full_name, profession, verified_badge),
-          comments:discussion_comments(count)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('blog_posts')
-        .select(`
-          id,
-          title,
-          content,
-          created_at,
-          author:profiles(full_name, profession, verified_badge),
-          comments:blog_comments(count)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5),
-    ]);
-
-    if (discRes.data) setTopDiscussions(discRes.data);
-    if (blogRes.data) setTopBlogs(blogRes.data);
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      setErrorMsg('');
+      const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/discussions` : undefined;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Google-ით ავტორიზაცია ვერ მოხერხდა');
+      setGoogleLoading(false);
+    }
   };
 
-  const handleAuthSubmit = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAuthError('');
-    setAuthSuccess('');
-    setAuthLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+    setLoading(true);
 
     try {
-      if (authMode === 'login') {
+      if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
-          email: authEmail,
-          password: authPassword,
+          email: email.trim(),
+          password,
         });
         if (error) throw error;
+        router.push('/discussions');
+        router.refresh();
       } else {
-        if (authPassword !== authConfirmPassword) {
+        if (password !== confirmPassword) {
           throw new Error('პაროლები არ ემთხვევა ერთმანეთს');
         }
-        if (!authBirthDate) {
+        if (!birthDate) {
           throw new Error('მიუთითეთ დაბადების თარიღი');
         }
 
         const { data, error } = await supabase.auth.signUp({
-          email: authEmail,
-          password: authPassword,
+          email: email.trim(),
+          password,
           options: {
             data: {
-              username: authUsername,
-              full_name: authFullName,
-              birth_date: authBirthDate,
-              profession: authProfession,
-              workplace: authWorkplace,
+              username: username.trim(),
+              full_name: fullName.trim(),
+              birth_date: birthDate,
+              profession,
+              workplace: workplace.trim(),
             },
           },
         });
         if (error) throw error;
 
-        if (data.session) {
-          setUser(data.session.user);
-        } else {
-          setAuthSuccess('რეგისტრაცია წარმატებით დასრულდა! ახლა გაიარეთ ავტორიზაცია.');
-          setAuthMode('login');
-        }
+        setSuccessMsg('რეგისტრაცია წარმატებით დასრულდა! შეამოწმეთ ელ-ფოსტა ან შედით სისტემაში.');
+        setIsLogin(true);
       }
     } catch (err: any) {
-      setAuthError(err.message || 'დაფიქსირდა შეცდომა');
+      setErrorMsg(err.message || 'დაფიქსირდა შეცდომა');
     } finally {
-      setAuthLoading(false);
+      setLoading(false);
     }
   };
 
-  if (loadingUser) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="text-slate-400 text-base animate-pulse font-semibold">სისტემა იტვირთება...</div>
-      </div>
-    );
-  }
-
-  // =========================================================================
-  // 1. NOT LOGGED IN -> SPACIOUS AUTH CARD
-  // =========================================================================
-  if (!user) {
-    return (
-      <div className="max-w-2xl mx-auto my-8 sm:my-14 px-2">
-        <div className="bg-white dark:bg-navy-900 border border-slate-300 dark:border-slate-800 rounded-3xl p-8 sm:p-12 shadow-xl transition-all">
-          <div className="text-center mb-10">
-            <div className="inline-flex p-4 rounded-3xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 mb-4 shadow-sm">
-              <Shield className="w-11 h-11" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-              Healthcare<span className="text-cyan-600 dark:text-cyan-400">Comm</span>
-            </h1>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-2 font-semibold">
-              დახურული სივრცე ჯანდაცვის სფეროს სპეციალისტებისთვის
-            </p>
-          </div>
-
-          {authError && (
-            <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/20 text-rose-700 dark:text-rose-400 text-sm flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              <span className="font-medium">{authError}</span>
-            </div>
-          )}
-
-          {authSuccess && (
-            <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 shrink-0" />
-              <span className="font-medium">{authSuccess}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleAuthSubmit} className="space-y-5">
-            {authMode === 'register' && (
-              <>
-                <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-                    სახელი და გვარი *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={authFullName}
-                    onChange={(e) => setAuthFullName(e.target.value)}
-                    placeholder="მაგ. გიორგი ბერიძე"
-                    className="w-full px-4 py-3 text-base bg-slate-50 dark:bg-navy-950 border border-slate-300 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white font-medium shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-                    მომხმარებლის სახელი (Username) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={authUsername}
-                    onChange={(e) => setAuthUsername(e.target.value)}
-                    placeholder="giorgi_beridze"
-                    className="w-full px-4 py-3 text-base bg-slate-50 dark:bg-navy-950 border border-slate-300 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white font-medium shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                    დაბადების თარიღი (კალენდარი) *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={authBirthDate}
-                    onChange={(e) => setAuthBirthDate(e.target.value)}
-                    className="w-full px-4 py-3 text-base bg-slate-50 dark:bg-navy-950 border border-slate-300 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white font-medium shadow-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-                    მიმართულება / სპეციალობა *
-                  </label>
-                  <select
-                    value={authProfession}
-                    onChange={(e) => setAuthProfession(e.target.value)}
-                    className="w-full px-4 py-3 text-base bg-slate-50 dark:bg-navy-950 border border-slate-300 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white font-medium shadow-sm cursor-pointer"
-                  >
-                    <option value="საზოგადოებრივი ჯანდაცვა">საზოგადოებრივი ჯანდაცვა</option>
-                    <option value="ჯანდაცვის პოლიტიკა">ჯანდაცვის პოლიტიკა</option>
-                    <option value="ჯანდაცვის მენეჯმენტი">ჯანდაცვის მენეჯმენტი</option>
-                    <option value="ეპიდემიოლოგია და ბიოსტატისტიკა">ეპიდემიოლოგია და ბიოსტატისტიკა</option>
-                    <option value="კვლევა და ანალიტიკა">კვლევა და ანალიტიკა</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                    სამუშაო ადგილი / ორგანიზაცია
-                  </label>
-                  <input
-                    type="text"
-                    value={authWorkplace}
-                    onChange={(e) => setAuthWorkplace(e.target.value)}
-                    placeholder="მაგ. უნივერსიტეტი, კვლევითი ცენტრი"
-                    className="w-full px-4 py-3 text-base bg-slate-50 dark:bg-navy-950 border border-slate-300 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white font-medium shadow-sm"
-                  />
-                </div>
-              </>
-            )}
-
-            <div>
-              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-                ელ-ფოსტა *
-              </label>
-              <input
-                type="email"
-                required
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-                placeholder="example@health.ge"
-                className="w-full px-4 py-3 text-base bg-slate-50 dark:bg-navy-950 border border-slate-300 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white font-medium shadow-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-                პაროლი *
-              </label>
-              <input
-                type="password"
-                required
-                value={authPassword}
-                onChange={(e) => setAuthPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 text-base bg-slate-50 dark:bg-navy-950 border border-slate-300 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white font-medium shadow-sm"
-              />
-            </div>
-
-            {authMode === 'register' && (
-              <div>
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-                  პაროლის დადასტურება *
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={authConfirmPassword}
-                  onChange={(e) => setAuthConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 text-base bg-slate-50 dark:bg-navy-950 border border-slate-300 dark:border-slate-800 rounded-2xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white font-medium shadow-sm"
-                />
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={authLoading}
-              className="w-full mt-4 py-3.5 px-6 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-base shadow-lg shadow-cyan-600/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2.5 cursor-pointer"
-            >
-              {authLoading ? (
-                <span className="animate-pulse">მუშავდება...</span>
-              ) : authMode === 'login' ? (
-                <>
-                  <LogIn className="w-5 h-5" />
-                  შესვლა პლატფორმაზე
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-5 h-5" />
-                  რეგისტრაციის დასრულება
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Switch link */}
-          <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-800 text-center">
-            {authMode === 'login' ? (
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium">
-                არ გაქვთ ანგარიში?{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('register');
-                    setAuthError('');
-                    setAuthSuccess('');
-                  }}
-                  className="font-extrabold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer ml-1"
-                >
-                  გაიარეთ რეგისტრაცია
-                </button>
-              </p>
-            ) : (
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-medium">
-                უკვე გაქვთ ანგარიში?{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('login');
-                    setAuthError('');
-                    setAuthSuccess('');
-                  }}
-                  className="font-extrabold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer ml-1"
-                >
-                  შედით სისტემაში
-                </button>
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // =========================================================================
-  // 2. LOGGED IN -> FULL COMMUNITY DASHBOARD / SPATIAL CARDS
-  // =========================================================================
   return (
-    <div className="space-y-10">
-      {/* Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-navy-900 to-slate-900 border border-slate-800 p-8 sm:p-12 shadow-xl text-white">
-        <div className="relative z-10 max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-xs sm:text-sm font-extrabold">
-            <Sparkles className="w-4 h-4" />
-            პროფესიული სივრცე
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            Healthcare<span className="text-cyan-400">Comm</span>
-          </h1>
-          <p className="text-slate-300 text-base sm:text-lg leading-relaxed font-normal">
-            დახურული ქომუნითი ჯანდაცვის პოლიტიკის, მენეჯმენტის, ეპიდემიოლოგიისა და კვლევების სპეციალისტებისთვის. გაუზიარეთ მიგნებები და ითანამშრომლეთ კოლეგებთან.
-          </p>
-          <div className="pt-3 flex flex-wrap gap-4">
-            <Link
-              href="/discussions/new"
-              className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all shadow-md shadow-cyan-500/20"
-            >
-              + გახსენით დისკუსია
-            </Link>
-            <Link
-              href="/blog/new"
-              className="bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-5 py-3 rounded-2xl text-sm font-bold transition-all"
-            >
-              + გამოაქვეყნეთ ბლოგი
-            </Link>
-          </div>
+    <div className="max-w-md mx-auto my-8 p-6 sm:p-8 bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl transition-all">
+      <div className="text-center mb-6">
+        <div className="inline-flex p-3 rounded-2xl bg-cyan-500/10 text-cyan-500 mb-3">
+          <Shield className="w-8 h-8" />
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+          Healthcare<span className="text-cyan-500">Comm</span>
+        </h1>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          დახურული სივრცე ჯანდაცვის სფეროს სპეციალისტებისთვის
+        </p>
+      </div>
+
+      {errorMsg && (
+        <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
+
+      {/* Google-ით ავტორიზაცია */}
+      <div className="mb-5">
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={googleLoading || loading}
+          className="w-full py-2.5 px-4 bg-white dark:bg-navy-950 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-semibold rounded-xl shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-50"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z" />
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
+          </svg>
+          <span>{googleLoading ? 'მიმდინარეობს გადამისამართება...' : 'Google-ით ავტორიზაცია'}</span>
+        </button>
+
+        <div className="relative flex items-center justify-center my-4">
+          <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
+          <span className="absolute bg-white dark:bg-navy-900 px-3 text-[11px] text-slate-400 uppercase tracking-wider">
+            ან ელ-ფოსტით
+          </span>
         </div>
       </div>
 
-      {/* Grid: Spacious, High-Contrast Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        
-        {/* Top 5 Discussions */}
-        <section className="space-y-5">
-          <div className="flex items-center justify-between pb-1">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-amber-500/15 text-amber-500">
-                <Flame className="w-6 h-6 text-amber-500" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                ტოპ-5 აქტიური დისკუსია
-              </h2>
+      <form onSubmit={handleAuth} className="space-y-4">
+        {!isLogin && (
+          <>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                სახელი და გვარი *
+              </label>
+              <input
+                type="text"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="მაგ. გიორგი ბერიძე"
+                className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
+              />
             </div>
-            <Link
-              href="/discussions"
-              className="text-sm font-extrabold text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1.5"
-            >
-              ყველა დისკუსია <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
 
-          <div className="space-y-4">
-            {topDiscussions.length === 0 ? (
-              <div className="p-10 text-center bg-white dark:bg-navy-900 rounded-3xl border border-slate-300 dark:border-slate-800 shadow-sm text-slate-600 dark:text-slate-400 text-base font-medium">
-                დისკუსიები ჯერ არ არის. იყავით პირველი, ვინც წამოიწყებს თემას!
-              </div>
-            ) : (
-              topDiscussions.map((item: any) => (
-                <Link
-                  key={item.id}
-                  href={`/discussions/${item.id}`}
-                  className="block p-6 bg-white dark:bg-navy-900 border border-slate-300 dark:border-slate-800 hover:border-cyan-500 dark:hover:border-cyan-500/60 rounded-3xl transition-all shadow-sm hover:shadow-md group"
-                >
-                  <div className="flex items-center gap-2.5 mb-2.5 text-xs sm:text-sm">
-                    <span className="font-extrabold text-slate-900 dark:text-slate-100">
-                      {item.author?.full_name || 'მომხმარებელი'}
-                    </span>
-                    {item.author?.verified_badge && (
-                      <CheckCircle className="w-4 h-4 text-cyan-500" />
-                    )}
-                    <span className="text-slate-400">•</span>
-                    <span className="text-slate-600 dark:text-slate-400 font-semibold">{item.author?.profession}</span>
-                  </div>
-
-                  <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors line-clamp-2 mb-3 leading-snug">
-                    {item.title}
-                  </h3>
-
-                  <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    {item.topics?.map((topic: string) => (
-                      <span
-                        key={topic}
-                        className="text-xs font-extrabold px-3 py-1 rounded-full bg-slate-100 dark:bg-navy-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
-                      >
-                        {topic}
-                      </span>
-                    ))}
-
-                    {item.is_policy_brief && (
-                      <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-500/30 flex items-center gap-1.5">
-                        <FileText className="w-3.5 h-3.5" /> Policy Brief
-                      </span>
-                    )}
-
-                    {item.seeking_collaborators && (
-                      <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30 flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5" /> თანამშრომლობა
-                      </span>
-                    )}
-
-                    <div className="ml-auto text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                      <MessageSquare className="w-4 h-4" />
-                      {item.comments?.[0]?.count || 0} პასუხი
-                    </div>
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Top 5 Blogs */}
-        <section className="space-y-5">
-          <div className="flex items-center justify-between pb-1">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-teal-500/15 text-teal-600 dark:text-teal-400">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                ტოპ-5 ბლოგ-პოსტი & ანალიტიკა
-              </h2>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                მომხმარებლის სახელი (USERNAME) *
+              </label>
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="giorgi_beridze"
+                className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
+              />
             </div>
-            <Link
-              href="/blog"
-              className="text-sm font-extrabold text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1.5"
-            >
-              ყველა ბლოგი <ArrowRight className="w-4 h-4" />
-            </Link>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                დაბადების თარიღი (კალენდარი) *
+              </label>
+              <input
+                type="date"
+                required
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                მიმართულება / სპეციალობა *
+              </label>
+              <select
+                value={profession}
+                onChange={(e) => setProfession(e.target.value)}
+                className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
+              >
+                <option value="საზოგადოებრივი ჯანდაცვა">საზოგადოებრივი ჯანდაცვა</option>
+                <option value="ჯანდაცვის პოლიტიკა">ჯანდაცვის პოლიტიკა</option>
+                <option value="ჯანდაცვის მენეჯმენტი">ჯანდაცვის მენეჯმენტი</option>
+                <option value="ეპიდემიოლოგია და ბიოსტატისტიკა">ეპიდემიოლოგია და ბიოსტატისტიკა</option>
+                <option value="კვლევა და ანალიტიკა">კვლევა და ანალიტიკა</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                სამუშაო ადგილი / ორგანიზაცია
+              </label>
+              <input
+                type="text"
+                value={workplace}
+                onChange={(e) => setWorkplace(e.target.value)}
+                placeholder="მაგ. უნივერსიტეტი, კვლევითი ცენტრი"
+                className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
+              />
+            </div>
+          </>
+        )}
+
+        <div>
+          <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+            ელ-ფოსტა *
+          </label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="example@health.ge"
+            className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+            პაროლი *
+          </label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
+          />
+        </div>
+
+        {!isLogin && (
+          <div>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              პაროლის დადასტურება *
+            </label>
+            <input
+              type="password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
+            />
           </div>
+        )}
 
-          <div className="space-y-4">
-            {topBlogs.length === 0 ? (
-              <div className="p-10 text-center bg-white dark:bg-navy-900 rounded-3xl border border-slate-300 dark:border-slate-800 shadow-sm text-slate-600 dark:text-slate-400 text-base font-medium">
-                ბლოგ-სტატიები ჯერ არ არის. გაუზიარეთ თქვენი ანალიტიკური სტატია კოლეგებს!
-              </div>
-            ) : (
-              topBlogs.map((item: any) => (
-                <Link
-                  key={item.id}
-                  href={`/blog/${item.id}`}
-                  className="block p-6 bg-white dark:bg-navy-900 border border-slate-300 dark:border-slate-800 hover:border-teal-500 dark:hover:border-teal-500/60 rounded-3xl transition-all shadow-sm hover:shadow-md group"
-                >
-                  <div className="flex items-center gap-2.5 mb-2.5 text-xs sm:text-sm">
-                    <span className="font-extrabold text-slate-900 dark:text-slate-100">
-                      {item.author?.full_name || 'ავტორი'}
-                    </span>
-                    <span className="text-slate-400">•</span>
-                    <span className="text-slate-600 dark:text-slate-400 font-semibold">{item.author?.profession}</span>
-                  </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full mt-2 py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-sm shadow-md shadow-cyan-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+        >
+          {loading ? (
+            <span className="animate-pulse">მუშავდება...</span>
+          ) : isLogin ? (
+            <>
+              <LogIn className="w-4 h-4" />
+              შესვლა პლატფორმაზე
+            </>
+          ) : (
+            <>
+              <UserPlus className="w-4 h-4" />
+              რეგისტრაციის დასრულება
+            </>
+          )}
+        </button>
+      </form>
 
-                  <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors line-clamp-2 mb-3 leading-snug">
-                    {item.title}
-                  </h3>
-
-                  <div className="flex justify-between items-center text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <span>{new Date(item.created_at).toLocaleDateString('ka-GE')}</span>
-                    <div className="flex items-center gap-1.5">
-                      <MessageSquare className="w-4 h-4" />
-                      {item.comments?.[0]?.count || 0} კომენტარი
-                    </div>
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
-        </section>
-
+      <div className="mt-6 text-center">
+        {isLogin ? (
+          <button
+            type="button"
+            onClick={() => { setIsLogin(false); setErrorMsg(''); setSuccessMsg(''); }}
+            className="text-xs text-slate-500 hover:text-cyan-500 transition-colors cursor-pointer"
+          >
+            არ გაქვთ ანგარიში? <span className="font-semibold text-cyan-600 dark:text-cyan-400">გაიარეთ რეგისტრაცია</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setIsLogin(true); setErrorMsg(''); setSuccessMsg(''); }}
+            className="text-xs text-slate-500 hover:text-cyan-500 transition-colors cursor-pointer"
+          >
+            უკვე გაქვთ ანგარიში? <span className="font-semibold text-cyan-600 dark:text-cyan-400">შედით სისტემაში</span>
+          </button>
+        )}
       </div>
     </div>
   );
