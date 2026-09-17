@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { User, CheckCircle, Briefcase, GraduationCap, Link as LinkIcon, Edit3, Save } from 'lucide-react';
@@ -79,20 +79,28 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) return <div className="py-12 text-center text-slate-500 animate-pulse text-xs">იტვირთება...</div>;
+  if (loading) {
+    return (
+      <div className="py-12 text-center text-slate-500 animate-pulse text-xs">
+        მონაცემები იტვირთება...
+      </div>
+    );
+  }
+
+  const userInitial = profile?.full_name ? profile.full_name.charAt(0) : 'H';
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6 pb-12">
       <div className="bg-white dark:bg-navy-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-cyan-600 to-teal-400 text-slate-950 font-bold text-2xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
-              {profile?.full_name?.[0] || 'H'}
+              {userInitial}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {profile?.full_name}
+                  {profile?.full_name || 'მომხმარებელი'}
                 </h1>
                 {profile?.verified_badge && (
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
@@ -153,7 +161,7 @@ export default function ProfilePage() {
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 className="w-full p-3 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-cyan-500 text-slate-900 dark:text-white"
-              />
+              ></textarea>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -164,4 +172,92 @@ export default function ProfilePage() {
                   value={orcidId}
                   onChange={(e) => setOrcidId(e.target.value)}
                   placeholder="0000-0002-1825-0097"
-                  className="w-full px-3.5 py-2 text-
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Google Scholar პროფილი</label>
+                <input
+                  type="text"
+                  value={scholarUrl}
+                  onChange={(e) => setScholarUrl(e.target.value)}
+                  placeholder="https://scholar.google.com/..."
+                  className="w-full px-3.5 py-2 text-sm bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-6 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'ინახება...' : 'შენახვა'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-6 pt-6 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="text-xs text-slate-400 flex items-center gap-1.5">
+                  <GraduationCap className="w-4 h-4 text-cyan-500" /> სპეციალობა
+                </span>
+                <p className="font-semibold text-slate-900 dark:text-white">{profile?.profession || 'არ არის მითითებული'}</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="text-xs text-slate-400 flex items-center gap-1.5">
+                  <Briefcase className="w-4 h-4 text-cyan-500" /> ორგანიზაცია
+                </span>
+                <p className="font-semibold text-slate-900 dark:text-white">{profile?.workplace || 'არ არის მითითებული'}</p>
+              </div>
+            </div>
+
+            {profile?.bio && (
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="text-xs text-slate-400">ბიოგრაფია</span>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{profile.bio}</p>
+              </div>
+            )}
+
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-navy-950 border border-slate-200 dark:border-slate-800 space-y-3">
+              <span className="text-xs text-slate-400 block font-semibold uppercase tracking-wider">
+                აკადემიური იდენტიფიკატორები & პუბლიკაციები
+              </span>
+              <div className="flex flex-wrap gap-4 text-xs">
+                {profile?.orcid_id ? (
+                  <a
+                    href={`https://orcid.org/${profile.orcid_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" /> ORCID: {profile.orcid_id}
+                  </a>
+                ) : (
+                  <span className="text-slate-400">ORCID არ არის მითითებული</span>
+                )}
+
+                {profile?.google_scholar_url ? (
+                  <a
+                    href={profile.google_scholar_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 font-medium hover:underline"
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" /> Google Scholar პროფილი
+                  </a>
+                ) : (
+                  <span className="text-slate-400">Google Scholar არ არის მითითებული</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
