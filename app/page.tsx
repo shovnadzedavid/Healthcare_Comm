@@ -824,4 +824,185 @@ export default function HomePage() {
 
                     {item.seeking_collaborators && (
                       <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-1">
-                        <Users className="w-3 h-3" /> კვლევითი პარ
+                        <Users className="w-3 h-3" /> კვლევითი პარტნიორობა
+                      </span>
+                    )}
+
+                    {item.topics?.slice(0, 3).map((topic: string) => (
+                      <span
+                        key={topic}
+                        className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-stone-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+
+                    <div className="ml-auto text-xs text-slate-400 flex items-center gap-1 font-semibold">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      {(item.comments && item.comments[0] ? item.comments[0].count : 0)} პასუხი
+                    </div>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+
+          {/* BLOGS SUB-SECTION (თუ ჩართულია "ყველა" ან "ბლოგები") */}
+          {(activeTab === 'all' || activeTab === 'blogs') && topBlogs.length > 0 && (
+            <div className="pt-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                    ანალიტიკური სტატიები და ბლოგები
+                  </h2>
+                </div>
+                <Link
+                  href="/blog"
+                  className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
+                >
+                  ყველა სტატია <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {topBlogs.slice(0, 4).map((blog) => (
+                  <Link
+                    key={blog.id}
+                    href={`/blog/${blog.id}`}
+                    className="p-5 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800/90 hover:border-teal-400 dark:hover:border-teal-500/50 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 flex flex-col justify-between group"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 mb-2 text-xs text-slate-400">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          {blog.author?.full_name || 'ავტორი'}
+                        </span>
+                        <span>•</span>
+                        <span>{new Date(blog.created_at).toLocaleDateString('ka-GE')}</span>
+                      </div>
+
+                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors line-clamp-2 mb-3">
+                        {blog.title}
+                      </h3>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        {blog.author?.profession || 'სპეციალისტი'}
+                      </span>
+                      <div className="flex items-center gap-1 font-medium">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        {(blog.comments && blog.comments[0] ? blog.comments[0].count : 0)}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* მარჯვენა მხარე: SIDEBAR ECOSYSTEM (4 სვეტი) */}
+        <aside className="lg:col-span-4 space-y-6">
+          
+          {/* SIDEBAR BLOCK 1: MASTERCLASSES & LIVE */}
+          <div className="p-6 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800 rounded-3xl shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                <Video className="w-3.5 h-3.5" />
+                მასტერკლასები & Live
+              </span>
+              <Link href="/masterclasses" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
+                კატალოგი
+              </Link>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/70 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200">
+                  DRG & ფინანსები
+                </span>
+                <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400">
+                  49 GEL
+                </span>
+              </div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                DRG სისტემის ოპტიმიზაცია და კლინიკის ფინანსური მართვა
+              </h4>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">
+                პრაქტიკული ქეისები, კოდირების სტრატეგია და სადაზღვევო უარყოფების (Denials) შემცირება.
+              </p>
+              <div className="pt-2 flex items-center justify-between text-xs border-t border-amber-200/50 dark:border-amber-900/40">
+                <span className="font-semibold text-slate-800 dark:text-slate-200">გიორგი ბერიძე</span>
+                <Link
+                  href="/masterclasses"
+                  className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                >
+                  დეტალები <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 space-y-2">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                Horizon Europe & NIH
+              </span>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                საერთაშორისო გრანტების მოპოვება საქართველოდან
+              </h4>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">
+                კვლევითი კონსორციუმის შეკვრა და დონორის პრიორიტეტების გაშიფვრა.
+              </p>
+            </div>
+          </div>
+
+          {/* SIDEBAR BLOCK 2: CO-AUTHORSHIP & RESEARCH OPPORTUNITIES */}
+          <div className="p-6 bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 text-white rounded-3xl space-y-3.5 border border-emerald-900/40 shadow-xs">
+            <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+              <Users className="w-4 h-4" />
+              კვლევითი კოლაბორაცია
+            </div>
+            <h4 className="text-sm font-bold leading-snug">
+              ეძებთ თანაავტორს ან ბიოსტატისტიკოსს?
+            </h4>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              გახსენით დისკუსია „თანამშრომლობის“ მარკერით და იპოვეთ პარტნიორები საქართველოდან და ევროპიდან თქვენი სამეცნიერო პუბლიკაციისთვის.
+            </p>
+            <Link
+              href="/discussions/new"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-white underline pt-1"
+            >
+              განაცხადის შექმნა <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {/* SIDEBAR BLOCK 3: ACADEMIC DILEMMA OF THE WEEK */}
+          <div className="p-6 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800 rounded-3xl space-y-3">
+            <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider">
+              <Lightbulb className="w-3.5 h-3.5" />
+              კვირის მენეჯერული დილემა
+            </div>
+            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
+              უნდა ითვალისწინებდეს თუ არა DRG ტარიფი კლინიკის ხარისხის მაჩვენებლებს (P4P)?
+            </h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              დააფიქსირეთ თქვენი აკადემიური მოსაზრება მიმდინარე დისკუსიაში.
+            </p>
+            <Link
+              href="/discussions"
+              className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline pt-1"
+            >
+              აზრის დაფიქსირება <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+        </aside>
+
+      </div>
+
+    </div>
+  );
+}
