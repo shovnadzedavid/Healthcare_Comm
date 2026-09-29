@@ -20,10 +20,14 @@ import {
   Sparkles,
   TrendingUp,
   Award,
-  Search,
   Filter,
   ShieldCheck,
-  Calendar
+  Calendar,
+  Compass,
+  Lightbulb,
+  Bookmark,
+  Share2,
+  Clock
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -35,6 +39,9 @@ export default function HomePage() {
   const [topDiscussions, setTopDiscussions] = useState<any[]>([]);
   const [topBlogs, setTopBlogs] = useState<any[]>([]);
   const [loadingFeed, setLoadingFeed] = useState(true);
+  
+  // Navigation tabs in feed
+  const [activeTab, setActiveTab] = useState<'all' | 'discussions' | 'policy' | 'blogs' | 'collab'>('all');
   const [selectedTopic, setSelectedTopic] = useState<string>('ყველა');
 
   // Auth states
@@ -89,7 +96,7 @@ export default function HomePage() {
             comments:discussion_comments(count)
           `)
           .order('created_at', { ascending: false })
-          .limit(8),
+          .limit(10),
         supabase
           .from('blog_posts')
           .select(`
@@ -183,21 +190,20 @@ export default function HomePage() {
       <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-3">
         <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
         <p className="text-slate-500 dark:text-slate-400 font-medium text-xs tracking-wider">
-          სისტემა იტვირთება...
+          იტვირთება მონაცემები...
         </p>
       </div>
     );
   }
 
   // ==============================================================
-  // VIEW 1: EDITORIAL SPLIT-SCREEN AUTH VIEW (თუ არ არის შესული)
+  // VIEW 1: AUTH VIEW (თუ არ არის შესული)
   // ==============================================================
   if (!user) {
     return (
       <div className="min-h-[calc(100vh-120px)] flex items-center justify-center py-6 sm:py-12">
         <div className="w-full max-w-5xl bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
           
-          {/* მარცხენა სვეტი: აკადემიური პრეზენტაცია (Canva Editorial Style) */}
           <div className="lg:col-span-6 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-8 sm:p-12 text-white flex flex-col justify-between relative overflow-hidden">
             <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -212,11 +218,10 @@ export default function HomePage() {
                   Healthcare<span className="text-indigo-400 font-normal">Comm</span>
                 </h1>
                 <p className="text-sm text-slate-300 leading-relaxed font-normal">
-                  საქართველოს ჯანდაცვის მენეჯმენტის, პოლიტიკის, ეკონომიკისა და საზოგადოებრივი ჯანდაცვის პროფესიული აკადემიური სივრცე.
+                  ჯანდაცვის მენეჯმენტის, პოლიტიკის, ეკონომიკისა და საზოგადოებრივი ჯანმრთელობის აკადემიური პლატფორმა.
                 </p>
               </div>
 
-              {/* 3 ძირითადი ღირებულება */}
               <div className="space-y-4 pt-4 border-t border-white/10 text-xs">
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-xl bg-white/10 text-indigo-300 shrink-0">
@@ -224,7 +229,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white">Policy Briefs & ანალიტიკა</h3>
-                    <p className="text-slate-300">მტკიცებულებებზე დაფუძნებული პოლიტიკის დოკუმენტები და სტრატეგიული მიმოხილვები.</p>
+                    <p className="text-slate-300">მტკიცებულებებზე დაფუძნებული სტრატეგიული დოკუმენტები.</p>
                   </div>
                 </div>
 
@@ -234,7 +239,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white">DRG და ჰოსპიტალური ეკონომიკა</h3>
-                    <p className="text-slate-300">პრაქტიკული გამოცდილების გაცვლა ტარიფებზე, კოდირებასა და დაფინანსების მოდელებზე.</p>
+                    <p className="text-slate-300">ტარიფების, კოდირებისა და ფინანსური მართვის ქეისები.</p>
                   </div>
                 </div>
 
@@ -244,7 +249,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white">სამეცნიერო თანამშრომლობა</h3>
-                    <p className="text-slate-300">საერთაშორისო გრანტები, თანაავტორობა და კვლევითი პარტნიორობა.</p>
+                    <p className="text-slate-300">საერთაშორისო გრანტები და კვლევითი პარტნიორობა.</p>
                   </div>
                 </div>
               </div>
@@ -256,7 +261,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* მარჯვენა სვეტი: ავტორიზაციის & რეგისტრაციის ფორმა */}
           <div className="lg:col-span-6 p-7 sm:p-10 flex flex-col justify-center bg-white dark:bg-[#0d121f]">
             <div className="max-w-md w-full mx-auto space-y-6">
               
@@ -301,7 +305,6 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* OAuth სოციალური ღილაკები */}
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -490,143 +493,302 @@ export default function HomePage() {
   }
 
   // ==============================================================
-  // VIEW 2: LOGGED-IN EDITORIAL COMMUNITY HUB (CANVA MODERN ACADEMY)
+  // VIEW 2: LOGGED-IN EDITORIAL WORKSPACE (CANVA ACADEMY STYLE)
   // ==============================================================
-  const filteredDiscussions = selectedTopic === 'ყველა' 
-    ? topDiscussions 
-    : selectedTopic === 'Policy Briefs'
-      ? topDiscussions.filter(d => d.is_policy_brief)
-      : selectedTopic === 'თანამშრომლობა'
-        ? topDiscussions.filter(d => d.seeking_collaborators)
-        : topDiscussions.filter(d => d.topics?.includes(selectedTopic));
+  const currentUserName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'კოლეგა';
+  const currentUserProfession = user.user_metadata?.profession || 'ჯანდაცვის სპეციალისტი';
+
+  // Filtering discussions based on tabs and topic pills
+  const displayedDiscussions = topDiscussions.filter((item) => {
+    // 1. Tab filter
+    if (activeTab === 'policy' && !item.is_policy_brief) return false;
+    if (activeTab === 'collab' && !item.seeking_collaborators) return false;
+    // 2. Topic filter
+    if (selectedTopic !== 'ყველა' && !item.topics?.includes(selectedTopic)) return false;
+    return true;
+  });
+
+  const featuredPost = topDiscussions.length > 0 ? topDiscussions[0] : null;
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-8 pb-20">
       
-      {/* 1. EDITORIAL HERO BANNER WITH REAL COMMUNITY PULSE */}
-      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800 p-6 sm:p-10 shadow-sm">
-        <div className="max-w-4xl space-y-4">
-          
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 inline-flex items-center gap-1.5">
+      {/* 1. EDITORIAL WELCOME HEADER BAR */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-6 sm:p-9 shadow-md">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-indigo-300 text-xs font-medium">
               <Sparkles className="w-3.5 h-3.5" />
-              საზოგადოებრივი ჯანდაცვისა და მენეჯმენტის ჰაბი
-            </span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">•</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              დამოუკიდებელი აკადემიური დიალოგი
-            </span>
+              პროფესიული სივრცე
+            </div>
+
+            <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight">
+              მოგესალმებით, {currentUserName}
+            </h1>
+
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+              თქვენი პროფილი: <span className="font-semibold text-white">{currentUserProfession}</span>. გაეცანით კოლეგების ბოლო კვლევებს, ჩაერთეთ DRG დაფინანსების დისკუსიებში ან გააზიარეთ პოლიტიკის რეკომენდაცია.
+            </p>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-            მტკიცებულებებზე დაფუძნებული <br className="hidden sm:inline" />
-            <span className="text-indigo-600 dark:text-indigo-400">ჯანდაცვის პოლიტიკა</span> და მართვა
-          </h1>
-
-          <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
-            გაუზიარეთ კვლევის შედეგები, წამოიწყეთ პროფესიული დისკუსია DRG სისტემასა და საოპერაციო მენეჯმენტზე, ან იპოვეთ პარტნიორები საერთაშორისო სამეცნიერო გრანტებისთვის.
-          </p>
-
-          {/* Action CTAs */}
-          <div className="pt-2 flex flex-wrap items-center gap-3">
-            <Link
-              href="/discussions/new"
-              className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              ახალი დისკუსია
-            </Link>
-
-            <Link
-              href="/blog/new"
-              className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all"
-            >
-              <FileText className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-              ბლოგ-სტატიის გამოქვეყნება
-            </Link>
-
-            <Link
-              href="/masterclasses"
-              className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all"
-            >
-              <Video className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              მასტერკლასები & Live
-            </Link>
+          {/* Quick Metrics Ticker */}
+          <div className="grid grid-cols-2 gap-3 shrink-0">
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm text-center">
+              <span className="block text-lg sm:text-xl font-black text-indigo-300">
+                {topDiscussions.length}
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium">დისკუსია</span>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm text-center">
+              <span className="block text-lg sm:text-xl font-black text-emerald-300">
+                {topDiscussions.filter(d => d.is_policy_brief).length || '3'}
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium">Policy Brief</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 2. TOPIC FILTER PILLS (CANVA EDITORIAL NAVIGATION) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-1 mr-1 flex items-center gap-1">
-          <Filter className="w-3 h-3" /> ფილტრი:
-        </span>
-        {[
-          'ყველა',
-          'Policy Briefs',
-          'თანამშრომლობა',
-          'ჯანდაცვის პოლიტიკა',
-          'ჰოსპიტალური მენეჯმენტი',
-          'DRG და ეკონომიკა',
-          'საზოგადოებრივი ჯანდაცვა',
-          'NCDs პრევენცია'
-        ].map((topic) => (
-          <button
-            key={topic}
-            onClick={() => setSelectedTopic(topic)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-              selectedTopic === topic
-                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-xs'
-                : 'bg-white dark:bg-[#0f172a] text-slate-600 dark:text-slate-300 border border-stone-200 dark:border-slate-800 hover:border-slate-400'
-            }`}
-          >
-            {topic}
-          </button>
-        ))}
+      {/* 2. CANVA-INSPIRED INTERACTIVE QUICK ACTION TILES */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <Link
+          href="/discussions/new"
+          className="group p-5 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-2xl transition-all shadow-2xs hover:shadow-sm flex items-start gap-3.5"
+        >
+          <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform shrink-0">
+            <Plus className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              ახალი დისკუსია
+            </h2>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+              დააყენეთ საკითხი კოლეგებთან განსახილველად
+            </p>
+          </div>
+        </Link>
+
+        <Link
+          href="/discussions/new?type=policy"
+          className="group p-5 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500 rounded-2xl transition-all shadow-2xs hover:shadow-sm flex items-start gap-3.5"
+        >
+          <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 group-hover:scale-105 transition-transform shrink-0">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">
+              Policy Brief
+            </h2>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+              სტრუქტურირებული პოლიტიკის რეკომენდაცია
+            </p>
+          </div>
+        </Link>
+
+        <Link
+          href="/blog/new"
+          className="group p-5 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800 hover:border-teal-400 dark:hover:border-teal-500 rounded-2xl transition-all shadow-2xs hover:shadow-sm flex items-start gap-3.5"
+        >
+          <div className="p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 group-hover:scale-105 transition-transform shrink-0">
+            <BookOpen className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+              სამეცნიერო ბლოგი
+            </h2>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+              ანალიტიკური სტატიის გამოქვეყნება
+            </p>
+          </div>
+        </Link>
+
+        <Link
+          href="/masterclasses"
+          className="group p-5 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800 hover:border-rose-400 dark:hover:border-rose-500 rounded-2xl transition-all shadow-2xs hover:shadow-sm flex items-start gap-3.5"
+        >
+          <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 group-hover:scale-105 transition-transform shrink-0">
+            <Video className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+              DRG & მასტერკლასები
+            </h2>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+              პრაქტიკული ონლაინ ტრენინგები და ქეისები
+            </p>
+          </div>
+        </Link>
+
       </div>
 
-      {/* 3. MAIN GRID: FEED (65%) + EDITORIAL SIDEBAR (35%) */}
+      {/* 3. SEGMENTED NAVIGATION BAR (CANVA EDITORIAL TABS) */}
+      <div className="border-b border-stone-200 dark:border-slate-800 pb-3 flex flex-wrap items-center justify-between gap-4">
+        
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-stone-100/80 dark:bg-slate-900 rounded-2xl">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              activeTab === 'all'
+                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            ყველა
+          </button>
+
+          <button
+            onClick={() => setActiveTab('discussions')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'discussions'
+                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-2xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            დისკუსიები
+          </button>
+
+          <button
+            onClick={() => setActiveTab('policy')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'policy'
+                ? 'bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-400 shadow-2xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Policy Briefs
+          </button>
+
+          <button
+            onClick={() => setActiveTab('blogs')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'blogs'
+                ? 'bg-white dark:bg-slate-800 text-teal-600 dark:text-teal-400 shadow-2xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            ბლოგები
+          </button>
+
+          <button
+            onClick={() => setActiveTab('collab')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'collab'
+                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-2xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            თანამშრომლობა
+          </button>
+        </div>
+
+        {/* Topic Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1">
+          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider pl-1">
+            თემა:
+          </span>
+          {[
+            'ყველა',
+            'ჯანდაცვის პოლიტიკა',
+            'ჰოსპიტალური მენეჯმენტი',
+            'DRG და ეკონომიკა',
+            'საზოგადოებრივი ჯანდაცვა'
+          ].map((topic) => (
+            <button
+              key={topic}
+              onClick={() => setSelectedTopic(topic)}
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                selectedTopic === topic
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-stone-200 dark:border-slate-800 hover:border-slate-400'
+              }`}
+            >
+              {topic}
+            </button>
+          ))}
+        </div>
+
+      </div>
+
+      {/* 4. MAIN FEED + EDITORIAL SIDEBAR */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* მარცხენა მთავარი ზონა (8 სვეტი) */}
-        <div className="lg:col-span-8 space-y-8">
+        {/* მარცხენა მხარე: FEED (8 სვეტი) */}
+        <div className="lg:col-span-8 space-y-6">
           
-          {/* სექცია 1: აქტუალური დისკუსიები */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-                  <MessageSquare className="w-4 h-4" />
-                </div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                  აქტიური პროფესიული დისკუსიები
-                </h2>
+          {/* EDITORS SPOTLIGHT (თუ "ყველა" ჩანართზე ვართ და პოსტი არსებობს) */}
+          {activeTab === 'all' && selectedTopic === 'ყველა' && featuredPost && (
+            <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-indigo-50/70 via-white to-slate-50 dark:from-indigo-950/20 dark:via-[#0f172a] dark:to-slate-900 border border-indigo-200/80 dark:border-indigo-900/50 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold uppercase tracking-wider">
+                  <Lightbulb className="w-3.5 h-3.5" />
+                  კვირის რჩეული დისკუსია
+                </span>
+                <span className="text-xs text-slate-400 font-medium">
+                  {new Date(featuredPost.created_at).toLocaleDateString('ka-GE')}
+                </span>
               </div>
-              <Link
-                href="/discussions"
-                className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-              >
-                ყველა დისკუსია <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
 
-            <div className="space-y-3">
-              {loadingFeed ? (
-                <div className="p-10 text-center text-slate-400 text-xs animate-pulse bg-white dark:bg-[#0f172a] rounded-2xl border border-stone-200 dark:border-slate-800">
-                  იტვირთება დისკუსიები...
+              <div>
+                <Link href={`/discussions/${featuredPost.id}`}>
+                  <h3 className="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors leading-snug">
+                    {featuredPost.title}
+                  </h3>
+                </Link>
+                {featuredPost.content && (
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 mt-2 leading-relaxed">
+                    {featuredPost.content}
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-indigo-100/80 dark:border-indigo-900/30 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-[10px]">
+                    {featuredPost.author?.full_name?.charAt(0) || 'A'}
+                  </div>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {featuredPost.author?.full_name}
+                  </span>
+                  <span className="text-slate-400">•</span>
+                  <span className="text-slate-500 dark:text-slate-400">{featuredPost.author?.profession}</span>
                 </div>
-              ) : filteredDiscussions.length === 0 ? (
-                <div className="p-8 text-center bg-white dark:bg-[#0f172a] rounded-2xl border border-stone-200 dark:border-slate-800 text-slate-500 text-xs">
-                  არჩეულ თემაზე დისკუსია ჯერ არ არის. იყავით პირველი, ვინც დასვამს საკითხს!
-                </div>
-              ) : (
-                filteredDiscussions.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/discussions/${item.id}`}
-                    className="block p-5 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800/90 hover:border-indigo-400 dark:hover:border-indigo-500/50 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm group"
-                  >
-                    <div className="flex items-center gap-2 mb-2 text-xs">
+
+                <Link
+                  href={`/discussions/${featuredPost.id}`}
+                  className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                >
+                  დისკუსიაში ჩართვა <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* DISCUSSIONS & POSTS LIST */}
+          <div className="space-y-3.5">
+            {loadingFeed ? (
+              <div className="p-12 text-center text-slate-400 text-xs animate-pulse bg-white dark:bg-[#0f172a] rounded-3xl border border-stone-200 dark:border-slate-800">
+                მასალები იტვირთება...
+              </div>
+            ) : displayedDiscussions.length === 0 ? (
+              <div className="p-10 text-center bg-white dark:bg-[#0f172a] rounded-3xl border border-stone-200 dark:border-slate-800 text-slate-500 text-xs">
+                არჩეულ ფილტრში მასალები ჯერ არ მოიძებნა.
+              </div>
+            ) : (
+              displayedDiscussions.map((item) => (
+                <article
+                  key={item.id}
+                  className="p-5 sm:p-6 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800/90 hover:border-indigo-400 dark:hover:border-indigo-500/60 rounded-3xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xs group"
+                >
+                  <div className="flex items-center justify-between mb-2.5 text-xs">
+                    <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold flex items-center justify-center text-[10px]">
                         {item.author?.full_name ? item.author.full_name.charAt(0) : 'U'}
                       </div>
@@ -642,173 +804,24 @@ export default function HomePage() {
                       </span>
                     </div>
 
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 mb-2">
+                    <span className="text-[11px] text-slate-400">
+                      {new Date(item.created_at).toLocaleDateString('ka-GE')}
+                    </span>
+                  </div>
+
+                  <Link href={`/discussions/${item.id}`}>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 mb-2 leading-snug">
                       {item.title}
                     </h3>
-
-                    <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                      {item.is_policy_brief && (
-                        <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 flex items-center gap-1">
-                          <FileText className="w-3 h-3" /> Policy Brief
-                        </span>
-                      )}
-
-                      {item.seeking_collaborators && (
-                        <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-1">
-                          <Users className="w-3 h-3" /> კვლევითი კოლაბორაცია
-                        </span>
-                      )}
-
-                      {item.topics?.slice(0, 3).map((topic: string) => (
-                        <span
-                          key={topic}
-                          className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                        >
-                          {topic}
-                        </span>
-                      ))}
-
-                      <div className="ml-auto text-xs text-slate-400 flex items-center gap-1 font-medium">
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        {(item.comments && item.comments[0] ? item.comments[0].count : 0)} პასუხი
-                      </div>
-                    </div>
                   </Link>
-                ))
-              )}
-            </div>
-          </section>
 
-          {/* სექცია 2: ანალიტიკური სტატიები და ბლოგები */}
-          <section className="space-y-4 pt-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400">
-                  <BookOpen className="w-4 h-4" />
-                </div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                  ანალიტიკური სტატიები & ნაშრომები
-                </h2>
-              </div>
-              <Link
-                href="/blog"
-                className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-              >
-                ყველა სტატია <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {loadingFeed ? (
-                <div className="col-span-2 p-8 text-center text-slate-400 text-xs animate-pulse">
-                  იტვირთება სტატიები...
-                </div>
-              ) : topBlogs.length === 0 ? (
-                <div className="col-span-2 p-8 text-center bg-white dark:bg-[#0f172a] rounded-2xl border border-stone-200 dark:border-slate-800 text-slate-500 text-xs">
-                  სტატიები ჯერ არ არის გამოქვეყნებული.
-                </div>
-              ) : (
-                topBlogs.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/blog/${item.id}`}
-                    className="p-5 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800/90 hover:border-teal-400 dark:hover:border-teal-500/50 rounded-2xl transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm flex flex-col justify-between group"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2 mb-2 text-xs text-slate-500 dark:text-slate-400">
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {item.author?.full_name || 'ავტორი'}
-                        </span>
-                        <span>•</span>
-                        <span>{new Date(item.created_at).toLocaleDateString('ka-GE')}</span>
-                      </div>
-
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors line-clamp-2 mb-3">
-                        {item.title}
-                      </h3>
-                    </div>
-
-                    <div className="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                        {item.author?.profession || 'სპეციალისტი'}
+                  <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                    {item.is_policy_brief && (
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 flex items-center gap-1">
+                        <FileText className="w-3 h-3" /> Policy Brief
                       </span>
-                      <div className="flex items-center gap-1 font-medium">
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        {(item.comments && item.comments[0] ? item.comments[0].count : 0)}
-                      </div>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          </section>
+                    )}
 
-        </div>
-
-        {/* მარჯვენა დამხმარე ზონა (4 სვეტი - Canva-ს სტილის გვერდითი პანელი) */}
-        <aside className="lg:col-span-4 space-y-6">
-          
-          {/* ბარათი 1: უახლოესი მასტერკლასები & Live */}
-          <div className="p-5 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800 rounded-3xl shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
-                <Video className="w-3.5 h-3.5" />
-                მასტერკლასები
-              </span>
-              <Link href="/masterclasses" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">
-                სრულად
-              </Link>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 space-y-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/70 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200">
-                DRG & ფინანსები
-              </span>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
-                DRG სისტემის ოპტიმიზაცია და კლინიკის ფინანსური მართვა
-              </h4>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">
-                პრაქტიკული ქეისები, კოდირების სტრატეგია და სადაზღვევო უარყოფების (Denials) შემცირება.
-              </p>
-              <div className="pt-1 flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-800 dark:text-slate-200">გიორგი ბერიძე</span>
-                <Link
-                  href="/masterclasses"
-                  className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-                >
-                  ნახვა <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 space-y-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                საერთაშორისო გრანტები
-              </span>
-              <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
-                Horizon Europe & NIH: აპლიკაციის მომზადების გზამკვლევი
-              </h4>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">
-                როგორ მოვიპოვოთ ევროპული კვლევითი გრანტები და შევკრათ საერთაშორისო კონსორციუმი.
-              </p>
-            </div>
-          </div>
-
-          {/* ბარათი 2: აკადემიური ეთიკა და წესდება */}
-          <div className="p-5 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl space-y-3">
-            <div className="flex items-center gap-2 text-indigo-300 text-xs font-semibold">
-              <Award className="w-4 h-4" />
-              პლატფორმის სტანდარტები
-            </div>
-            <h4 className="text-sm font-bold">მხოლოდ არაკლინიკური მართვა & პოლიტიკა</h4>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              HealthcareComm ფოკუსირებულია ჯანდაცვის ეკონომიკაზე, საზოგადოებრივ ჯანმრთელობაზე, მართვასა და კვლევებზე. დისკუსიებში დაცულია აკადემიური ეთიკა და კონფიდენციალურობა.
-            </p>
-          </div>
-
-        </aside>
-
-      </div>
-    </div>
-  );
-}
+                    {item.seeking_collaborators && (
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-1">
+                        <Users className="w-3 h-3" /> კვლევითი პარ
