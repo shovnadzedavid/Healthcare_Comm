@@ -611,4 +611,419 @@ export default function HomePage() {
 
           <Link
             href="/masterclasses"
-            className="inline-flex
+            className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all"
+          >
+            <Video className="w-4 h-4 text-indigo-500" />
+            მასტერკლასები
+          </Link>
+        </div>
+      </div>
+
+      {/* 2. REAL-TIME SEARCH & SORT BAR (CIRCLE.SO / SUBSTACK STYLE) */}
+      <div className="bg-white dark:bg-[#0f172a] border border-stone-200/80 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)] space-y-3">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          
+          {/* Instant Search Bar */}
+          <div className="relative w-full sm:max-w-md">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="მოძებნეთ თემა, ავტორი ან საკვანძო სიტყვა..."
+              className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-indigo-600 text-slate-900 dark:text-white"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Sorter & View controls */}
+          <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+            <span className="text-xs text-slate-400 font-medium hidden sm:inline flex items-center gap-1">
+              <SlidersHorizontal className="w-3.5 h-3.5" /> სორტირება:
+            </span>
+
+            <div className="flex p-1 bg-slate-100 dark:bg-slate-900 rounded-xl text-xs font-medium">
+              <button
+                onClick={() => setSortBy('recent')}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  sortBy === 'recent'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                უახლესი
+              </button>
+
+              <button
+                onClick={() => setSortBy('trending')}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  sortBy === 'trending'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-2xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5 text-rose-500" />
+                აქტიური
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Tab Badges with dynamic counter */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-1 border-t border-slate-100 dark:border-slate-800/80">
+          <button
+            onClick={() => { setActiveTab('all'); setSelectedTopic('ყველა'); }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              activeTab === 'all' && selectedTopic === 'ყველა'
+                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            ყველა ({topDiscussions.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('policy')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'policy'
+                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5 text-amber-600" />
+            Policy Briefs ({topDiscussions.filter(d => d.is_policy_brief).length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('collab')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'collab'
+                ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5 text-emerald-600" />
+            თანამშრომლობა ({topDiscussions.filter(d => d.seeking_collaborators).length})
+          </button>
+
+          <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-800 mx-1 shrink-0"></div>
+
+          {['ჯანდაცვის პოლიტიკა', 'ჰოსპიტალური მენეჯმენტი', 'DRG და ეკონომიკა', 'საზოგადოებრივი ჯანდაცვა'].map((topic) => (
+            <button
+              key={topic}
+              onClick={() => { setSelectedTopic(topic); setActiveTab('all'); }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                selectedTopic === topic
+                  ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800'
+                  : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              {topic}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. MAIN WORKSPACE: 8-COLUMNS FEED + 4-COLUMNS SIDEBAR */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* მარცხენა მთავარი არე (8 სვეტი) */}
+        <div className="lg:col-span-8 space-y-4">
+          
+          {loadingFeed ? (
+            <div className="p-16 text-center text-slate-400 text-xs animate-pulse bg-white dark:bg-[#0f172a] rounded-3xl border border-stone-200 dark:border-slate-800">
+              იტვირთება დისკუსიები და მასალები...
+            </div>
+          ) : filteredDiscussions.length === 0 ? (
+            <div className="p-12 text-center bg-white dark:bg-[#0f172a] rounded-3xl border border-stone-200 dark:border-slate-800 space-y-3">
+              <Compass className="w-8 h-8 mx-auto text-slate-400" />
+              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                მასალები ვერ მოიძებნა
+              </h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                სცადეთ სხვა საძიებო სიტყვა ან მოხსენით არჩეული ფილტრები.
+              </p>
+              <button
+                onClick={() => { setSearchQuery(''); setActiveTab('all'); setSelectedTopic('ყველა'); }}
+                className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 underline cursor-pointer"
+              >
+                ფილტრების გასუფთავება
+              </button>
+            </div>
+          ) : (
+            filteredDiscussions.map((item) => {
+              const isSaved = savedIds.includes(item.id);
+              const isCopied = copiedId === item.id;
+
+              return (
+                <article
+                  key={item.id}
+                  className="p-6 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800/90 hover:border-slate-400 dark:hover:border-slate-700 rounded-3xl transition-all duration-150 hover:shadow-xs group"
+                >
+                  {/* Header: Author + Meta + Actions */}
+                  <div className="flex items-center justify-between gap-3 mb-3 text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-950 font-bold flex items-center justify-center text-[11px] shadow-2xs">
+                        {item.author?.full_name ? item.author.full_name.charAt(0) : 'U'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-slate-100">
+                          <span>{item.author?.full_name || 'მომხმარებელი'}</span>
+                          {item.author?.verified_badge && (
+                            <CheckCircle className="w-3.5 h-3.5 text-indigo-500" />
+                          )}
+                        </div>
+                        <span className="text-[11px] text-slate-400 truncate block">
+                          {item.author?.profession || 'სპეციალისტი'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Bookmark & Share Buttons */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-[11px] text-slate-400 mr-2 hidden sm:inline">
+                        {new Date(item.created_at).toLocaleDateString('ka-GE')}
+                      </span>
+
+                      <button
+                        onClick={(e) => handleShare(item.id, item.title, e)}
+                        title="ბმულის კოპირება"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      >
+                        {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
+                      </button>
+
+                      <button
+                        onClick={(e) => toggleBookmark(item.id, e)}
+                        title="სანიშნეებში შენახვა"
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          isSaved 
+                            ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60' 
+                            : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        <Bookmark className="w-3.5 h-3.5" fill={isSaved ? 'currentColor' : 'none'} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Title & Preview */}
+                  <Link href={`/discussions/${item.id}`} className="block group">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug mb-2">
+                      {item.title}
+                    </h2>
+                    {item.content && (
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed mb-3">
+                        {item.content}
+                      </p>
+                    )}
+                  </Link>
+
+                  {/* Footer Badges & Stats */}
+                  <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                    {item.is_policy_brief && (
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+                        <FileText className="w-3 h-3 text-amber-600" /> Policy Brief
+                      </span>
+                    )}
+
+                    {item.seeking_collaborators && (
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                        <Users className="w-3 h-3 text-emerald-600" /> კოლაბორაცია
+                      </span>
+                    )}
+
+                    {item.topics?.map((topic: string) => (
+                      <span
+                        key={topic}
+                        className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-stone-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                      >
+                        {topic}
+                      </span>
+                    ))}
+
+                    <div className="ml-auto flex items-center gap-3 text-xs text-slate-400 font-medium">
+                      <div className="flex items-center gap-1">
+                        <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{(item.comments && item.comments[0] ? item.comments[0].count : 0)}</span>
+                      </div>
+                      <Link
+                        href={`/discussions/${item.id}`}
+                        className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5"
+                      >
+                        სრულად <ArrowUpRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              );
+            })
+          )}
+
+          {/* BLOGS TEASER SECTION */}
+          {topBlogs.length > 0 && (
+            <div className="pt-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    ანალიტიკური სტატიები და ბლოგები
+                  </h3>
+                </div>
+                <Link
+                  href="/blog"
+                  className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
+                >
+                  ყველა სტატია <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {topBlogs.slice(0, 4).map((blog) => (
+                  <Link
+                    key={blog.id}
+                    href={`/blog/${blog.id}`}
+                    className="p-5 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800/90 hover:border-teal-400 dark:hover:border-teal-500 rounded-2xl transition-all duration-150 flex flex-col justify-between group shadow-2xs"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 mb-2 text-xs text-slate-400">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          {blog.author?.full_name || 'ავტორი'}
+                        </span>
+                        <span>•</span>
+                        <span>{new Date(blog.created_at).toLocaleDateString('ka-GE')}</span>
+                      </div>
+
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors line-clamp-2 mb-2 leading-snug">
+                        {blog.title}
+                      </h4>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                      <span className="text-[11px] font-medium text-slate-500">
+                        {blog.author?.profession || 'სპეციალისტი'}
+                      </span>
+                      <div className="flex items-center gap-1 font-medium">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        {(blog.comments && blog.comments[0] ? blog.comments[0].count : 0)}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* მარჯვენა SIDEBAR (4 სვეტი - SUBSTACK & HBR STYLE) */}
+        <aside className="lg:col-span-4 space-y-6">
+          
+          {/* WIDGET 1: UPCOMING MASTERCLASS TICKET CARD */}
+          <div className="p-6 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 text-white rounded-3xl shadow-sm border border-indigo-900/40 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                <Video className="w-3.5 h-3.5" />
+                Live მასტერკლასი
+              </span>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                ღია რეგისტრაცია
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm sm:text-base font-bold text-white leading-snug">
+                DRG სისტემის ოპტიმიზაცია და კლინიკის ფინანსური მართვა
+              </h4>
+              <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                პრაქტიკული ქეისები, კოდირების სტრატეგია და სადაზღვევო უარყოფების (Denials) შემცირება.
+              </p>
+            </div>
+
+            <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+              <div>
+                <span className="block font-semibold text-white">გიორგი ბერიძე</span>
+                <span className="text-[11px] text-slate-400">ჯანდაცვის ეკონომისტი</span>
+              </div>
+              <Link
+                href="/masterclasses"
+                className="px-3.5 py-1.5 bg-white text-slate-950 hover:bg-slate-100 rounded-xl font-bold text-xs transition-all shadow-xs"
+              >
+                ბილეთი / ნახვა
+              </Link>
+            </div>
+          </div>
+
+          {/* WIDGET 2: TRENDING TOP 3 (SUBSTACK / MEDIUM STYLE) */}
+          <div className="p-6 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800 rounded-3xl shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                <Flame className="w-4 h-4 text-rose-500" />
+                ტრენდული დისკუსიები
+              </div>
+              <span className="text-[11px] text-slate-400">ამ კვირაში</span>
+            </div>
+
+            <div className="space-y-3.5">
+              {trendingTop3.map((item, index) => (
+                <Link
+                  key={item.id}
+                  href={`/discussions/${item.id}`}
+                  className="flex items-start gap-3 group"
+                >
+                  <span className="text-lg font-black text-slate-300 dark:text-slate-700 group-hover:text-indigo-500 transition-colors shrink-0 leading-none mt-0.5">
+                    0{index + 1}
+                  </span>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2 leading-snug">
+                      {item.title}
+                    </h5>
+                    <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
+                      <span>{item.author?.full_name}</span>
+                      <span>•</span>
+                      <span>{(item.comments && item.comments[0] ? item.comments[0].count : 0)} პასუხი</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* WIDGET 3: RESEARCH COLLABORATION CALLOUT */}
+          <div className="p-6 bg-white dark:bg-[#0f172a] border border-stone-200/90 dark:border-slate-800 rounded-3xl shadow-xs space-y-3">
+            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">
+              <Users className="w-4 h-4" />
+              კვლევითი კოლაბორაცია
+            </div>
+            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
+              გჭირდებათ თანაავტორი ან ბიოსტატისტიკოსი?
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              გახსენით დისკუსია „თანამშრომლობის“ მონიშვნით და დააკავშირეთ თქვენი საკვლევი იდეა შესაბამის სპეციალისტებს.
+            </p>
+            <Link
+              href="/discussions/new"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline pt-1"
+            >
+              განაცხადის შექმნა <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+        </aside>
+
+      </div>
+
+    </div>
+  );
+}
